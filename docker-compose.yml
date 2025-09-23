@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    container_name: sedecyt_web
+    ports:
+      - "5000:5000"    # localhost:5000 -> contenedor:5000
+    volumes:
+      - .:/app         # para que los cambios locales se reflejen en el contenedor
+    environment:
+      - GOOGLE_CREDENTIALS=/app/credentials.json
+    restart: unless-stopped # reinicia el contenedor si falla o el servidor se cae
+    
