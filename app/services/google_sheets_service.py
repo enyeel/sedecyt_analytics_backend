@@ -63,5 +63,3 @@ def list_worksheets(credentials_path: str, sheet_id: str) -> list:
     sheet = client.open_by_key(sheet_id)
     return [ws.title for ws in sheet.worksheets()]
 
-
-"jajajajajajajaj menso angela"
