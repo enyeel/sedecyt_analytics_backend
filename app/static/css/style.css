@@ -1,0 +1,45 @@
+/* ... CÓDIGO ANTERIOR ... */
+
+/* Estilos para la gráfica de pastel */
+.pie-chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.pie-chart {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    position: relative;
+    background: conic-gradient(
+        hsl(226, 63%, 49%) 0% var(--good-percentage),
+        hwb(133 19% 17%) 0% var(--good-percentage),
+        hsl(56, 87%, 45%) var(--good-percentage) 100%
+    );
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.pie-chart .pie-chart-slice {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.pie-chart .good {
+    transform: translate(-50%, -50%);
+    left: 25%;
+    top: 50%;
+}
+
+.pie-chart .bad {
+    transform: translate(-50%, -50%);
+    left: 75%;
+    top: 50%;
+}
