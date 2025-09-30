@@ -1,6 +1,7 @@
-from app.services.google_sheets_service import read_worksheet_as_dataframe
-from config import CREDENTIALS_PATH
+from app import create_app
 
-SHEET_ID = "1Pkwk6REsRnZa1NNvQLtcdBVKIYuvIDY29XvjpRd8UKQ"
-df = read_worksheet_as_dataframe(CREDENTIALS_PATH, SHEET_ID, "Formulario Desarrollo Industria")
-print(df.head())
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
+
