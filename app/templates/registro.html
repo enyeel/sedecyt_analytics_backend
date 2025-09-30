@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
+  <title>Registro</title>
   <style>
+    /* Mismos estilos que en login */
     :root {
       --cyan-base: #e6ffff;
       --cyan-soft: #66cfff;
@@ -66,7 +67,7 @@
 
     .help-btn:hover {
       background: var(--cyan-base);
-      color: var(--white);
+      color: var(--blue-black);
     }
 
     .sidebar {
@@ -231,35 +232,42 @@
   <div id="sidebar" class="sidebar">
     <button class="close-btn" onclick="closeSidebar()">×</button>
     <div class="sidebar-content">
-      <button class="accordion">¿Cómo inicio sesión?</button>
+      <button class="accordion">¿Cómo registrarme?</button>
       <div class="panel">
-        <p>Introduce tu usuario y contraseña y presiona "Iniciar Sesión".</p>
+        <p>Completa el formulario con tus datos y haz clic en "Registrarse".</p>
       </div>
 
-      <button class="accordion">¿Qué hago si olvidé mi contraseña?</button>
+      <button class="accordion">¿Qué datos necesito?</button>
       <div class="panel">
-        <p>Haz clic en "¿Olvidaste tu contraseña?" y sigue las instrucciones.</p>
+        <p>Nombre completo, usuario, correo electrónico y contraseña.</p>
       </div>
     </div>
   </div>
 
-  <!-- Formulario de login -->
+  <!-- Formulario de registro -->
   <div class="login-container">
-    <h2>Login</h2>
+    <h2>Registro</h2>
     <form>
       <div class="input-group">
         <label for="username">Usuario</label>
         <input type="text" id="username" name="username" required>
       </div>
       <div class="input-group">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="input-group">
         <label for="password">Contraseña</label>
         <input type="password" id="password" name="password" required>
       </div>
-      <button type="submit" class="btn">Iniciar Sesión</button>
+      <div class="input-group">
+        <label for="confirm-password">Confirmar contraseña</label>
+        <input type="password" id="confirm-password" name="confirm-password" required>
+      </div>
+      <button type="submit" class="btn">Registrarse</button>
     </form>
     <div class="extra-links">
-      <a href="#">¿Olvidaste tu contraseña?</a> | 
-      <a href="registro.html">Registrarse</a>
+      <a href="login.html">¿Ya tienes cuenta? Inicia sesión</a>
     </div>
   </div>
 
