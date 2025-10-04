@@ -222,7 +222,7 @@
   <!-- Header corporativo -->
   <header>
     <div style="display:flex; align-items:center;">
-      <img src="c:\Users\usuario\Desktop\PI\estadias.png" alt="Logo de la compañía">
+      <img src="../static/imgs/logo-sedec.png" alt="Logo de la compañía">
     </div>
     <button class="help-btn" onclick="openSidebar()">Centro de Ayuda</button>
   </header>
@@ -259,7 +259,7 @@
     </form>
     <div class="extra-links">
       <a href="#">¿Olvidaste tu contraseña?</a> | 
-      <a href="registro.html">Registrarse</a>
+      <a href="{{ url_for('main.registro') }}">Registrarse</a>
     </div>
   </div>
 
