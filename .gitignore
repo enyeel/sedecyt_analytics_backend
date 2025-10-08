@@ -1,4 +1,6 @@
 # .gitignore
 venv/
 *.pyc
+
+# ingnore credentials file
 credentials.json
