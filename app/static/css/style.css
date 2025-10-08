@@ -1,0 +1,156 @@
+/* ... CÓDIGO ANTERIOR ... */
+
+/* Estilos para la gráfica de pastel */
+.pie-chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.pie-chart {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    position: relative;
+    background: conic-gradient(
+        hsl(226, 63%, 49%) 0% var(--good-percentage),
+        hwb(133 19% 17%) 0% var(--good-percentage),
+        hsl(56, 87%, 45%) var(--good-percentage) 100%
+    );
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.pie-chart .pie-chart-slice {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.pie-chart .good {
+    transform: translate(-50%, -50%);
+    left: 25%;
+    top: 50%;
+}
+
+.pie-chart .bad {
+    transform: translate(-50%, -50%);
+    left: 75%;
+    top: 50%;
+}/* ============================= */
+/* Estilos para formularios (login y registro) */
+/* ============================= */
+.form-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.15);
+}
+
+.form-container h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: hsl(226, 63%, 32%);
+}
+
+.form-container form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-container label {
+    font-weight: bold;
+    margin-top: 1rem;
+    color: #333;
+}
+
+.form-container input {
+    padding: 0.6rem;
+    margin-top: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    transition: border 0.3s ease;
+}
+
+.form-container input:focus {
+    border-color: hsl(226, 63%, 49%);
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+}
+
+.btn {
+    margin-top: 1.5rem;
+    padding: 0.7rem;
+    background: hsl(226, 63%, 49%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background: hsl(226, 63%, 40%);
+}
+
+/* ============================= */
+/* Estilos para el Centro de Ayuda */
+/* ============================= */
+.faq-btn {
+    display: block;
+    margin: 2rem auto;
+    padding: 0.7rem 1.5rem;
+    background: hsl(226, 63%, 49%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.faq-btn:hover {
+    background: hsl(226, 63%, 40%);
+}
+
+.faq-container {
+    max-width: 500px;
+    margin: 1rem auto;
+    padding: 1.5rem;
+    background: #f1f1f1;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.faq-container h3 {
+    margin-bottom: 1rem;
+    color: hsl(226, 63%, 32%);
+    text-align: center;
+}
+
+.faq-container ul {
+    list-style: none;
+    padding: 0;
+}
+
+.faq-container li {
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    color: #333;
+}
+
+.faq-search {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
