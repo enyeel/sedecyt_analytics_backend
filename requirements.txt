@@ -2,3 +2,4 @@ Flask
 gspread
 pandas
 google-auth-oauthlib
+supabase
