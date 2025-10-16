@@ -86,7 +86,7 @@ ex_data = [
     "912345678",         # 9 digitos, no es 10 -> ERROR
 ]
 
-cleaned_phones_example = phone_cleaning(ex_data)
-
-for original, limpio in zip(ex_data, cleaned_phones_example):
-    print(f"Original: {original:<20} -> Limpio: {limpio}")
+#cleaned_phones_example = phone_cleaning(ex_data)
+#
+#for original, limpio in zip(ex_data, cleaned_phones_example):
+#    print(f"Original: {original:<20} -> Limpio: {limpio}")

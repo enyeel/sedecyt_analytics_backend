@@ -9,14 +9,15 @@ df = read_worksheet_as_dataframe(CREDENTIALS_PATH, SHEET_ID, "Formulario Desarro
 
 dataframe = pd.DataFrame(df)
 
-telefonos_limpios = phone_cleaning(dataframe["Número de teléfono de la empresa"].astype(str).tolist())
+telefono_empresa_e163 = phone_cleaning(dataframe["Número de teléfono de la empresa"].astype(str).tolist())
 
-print(telefonos_limpios)
-#from app import create_app
+print(telefono_empresa_e163)
 
+"""
+from app import create_app
+app = create_app()
 
-#app = create_app()
-#
-#if __name__ == "__main__":
-#    app.run(debug=True, host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
 
+"""
