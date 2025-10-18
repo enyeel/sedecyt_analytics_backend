@@ -14,7 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar todo el proyecto
 COPY . .
 
-# Puerto que expone Flask
-
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 run:app
+# El comando CMD ahora usa Gunicorn, un servidor de producción para Python.
+# --bind 0.0.0.0:$PORT : Le dice a Gunicorn que escuche en todas las interfaces de red
+#                        en el puerto que Cloud Run le asigne a través de la variable $PORT.
+# run:app : Asume que tu archivo se llama run.py y la instancia de Flask se llama app.
+#           Si tu archivo es main.py y tu variable es server, sería "main:server".
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 run:app
 

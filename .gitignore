@@ -4,3 +4,6 @@ venv/
 
 # ingnore credentials file
 credentials.json
+
+# ignore environment variables file
+.env

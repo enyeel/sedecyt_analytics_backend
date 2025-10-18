@@ -1,23 +1,13 @@
-from app.services.google_sheets_service import read_worksheet_as_dataframe
-from app.services.data_cleaning_service import phone_cleaning
-from config import CREDENTIALS_PATH
-import pandas as pd
-
-SHEET_ID = "1Pkwk6REsRnZa1NNvQLtcdBVKIYuvIDY29XvjpRd8UKQ"
-df = read_worksheet_as_dataframe(CREDENTIALS_PATH, SHEET_ID, "Formulario Desarrollo Industria")
-#print(df.head())
-
-dataframe = pd.DataFrame(df)
-
-telefono_empresa_e163 = phone_cleaning(dataframe["Número de teléfono de la empresa"].astype(str).tolist())
-
-print(telefono_empresa_e163)
-
-"""
+# run.py
 from app import create_app
+from dotenv import load_dotenv
+
+# Carga las variables del archivo .env
+load_dotenv()
+
+# Crea la aplicación usando la fábrica
 app = create_app()
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
-
-"""
+if __name__ == '__main__':
+    # El puerto 8080 es común y es el que Cloud Run usa por defecto
+    app.run(debug=True, port=8080)
