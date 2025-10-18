@@ -4,35 +4,18 @@ from app.services.auth_decorator import token_required
 
 api_bp = Blueprint("api", __name__)
 
-@api_bp.route("/chart/grafico1", methods=["GET"])
-#@token_required
 
-def grafico1():
-    # Lógica para obtener y procesar los datos del gráfico 1
-    data = {
-        "labels": ["Enero", "Febrero", "Marzo", "Abril"],
-        "values": [10, 20, 15, 30]
-    }
-    return jsonify(data)
+#----------------------ENDPOINTS----------------------#
 
-@api_bp.route("/chart/grafico1_auth", methods=["GET"])
-@token_required
-def grafico1_auth():
-    # Lógica para obtener y procesar los datos del gráfico 1
-    data = {
-        "labels": ["Enero", "Febrero", "Marzo", "Abril"],
-        "values": [10, 20, 15, 30]
-    }
-    return jsonify(data)
- 
- 
+# Endpoint de prueba para verificar que la API está funcionando
 @api_bp.route("/health", methods = ["GET"])
 def health_check():
     return jsonify({"status": "API desplegada automaticamente desde Git"}), 200
 
-
+# Endpoint para obtener todos los datos de una tabla específica
 @api_bp.route("tabla/<string:table_name>", methods=["GET"])
-def get_table_data(table_name):
+@token_required
+def get_table_data(table_name):                                 #el nombre de la tabla se pasa como parámetro en la URL después de /tabla/
     from app.services.supabase_service import get_all_from
     
     print(f"Petición para obtener datos de la tabla: {table_name}")
