@@ -6,7 +6,7 @@ def create_app():
     CORS(app) # Habilitar CORS para todas las rutas y orígenes
 
     # importar y registrar rutas
-    from .api.routes import api_bp as api_routes
-    app.register_blueprint(api_routes.api_bp, url_prefix="/api")
+    from .api.routes import api_bp
+    app.register_blueprint(api_bp, url_prefix="/api")
 
     return app
