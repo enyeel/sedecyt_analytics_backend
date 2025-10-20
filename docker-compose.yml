@@ -3,7 +3,7 @@ version: '3.9'
 services:
   web:
     build: .
-    container_name: sedecyt_web
+    container_name: sedecyt_analytics_backend
     ports:
       - "5000:5000"    # localhost:5000 -> contenedor:5000
     volumes:
