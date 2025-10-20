@@ -378,3 +378,29 @@ def rescue_names(row: pd.Series) -> pd.Series:
             row['nombre_limpio'] = words[0]
             
     return row
+
+def clean_text_for_analysis(text: Union[str, float]) -> str:
+    """
+    Limpia texto libre de certificaciones: elimina saltos de línea,
+    reduce espacios múltiples y quita comillas/puntuación innecesaria.
+    """
+    if pd.isna(text) or not str(text).strip():
+        return ""
+    
+    text = str(text).strip()
+    
+    # 1. ELIMINAR SALTOS DE LÍNEA Y RETORNOS DE CARRO
+    # Convierte cualquier forma de salto de línea a un espacio simple.
+    text = re.sub(r'[\r\n]+', ' ', text)
+    
+    # 2. ELIMINAR COMILLAS Y PUNTUACIÓN DE RUÍDO
+    # Quita comillas dobles/simples que el usuario pudo haber puesto (y que confunden al parseo).
+    # Mantenemos solo el texto alfanumérico, espacios y algunos símbolos clave (como el guion).
+    text = re.sub(r'[",\'’]', '', text) 
+    
+    # 3. REDUCIR ESPACIOS MÚLTIPLES
+    # Corrige el ruído de espacios generados al reemplazar saltos de línea.
+    text = re.sub(r'\s+', ' ', text)
+    
+    # 4. ESTANDARIZACIÓN BÁSICA
+    return text.strip().upper() # Todo en MAYÚSCULAS para facilitar el análisis de agrupamiento.

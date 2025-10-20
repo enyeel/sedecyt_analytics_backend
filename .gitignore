@@ -10,3 +10,6 @@ credentials.json
 
 # Ignore CSV files
 *.csv
+
+# archivos generados automáticamente
+/outputs/
