@@ -26,3 +26,20 @@ def get_table_data(table_name):                                 #el nombre de la
         return jsonify(data), 404
     
     return jsonify(data), 200
+
+#endpoint de prueba para verificar conexión con supabase
+
+@api_bp.route("tabla-no-auth/<string:tabla>", methods=["GET"])
+def get_table(tabla):                                 #el nombre de la tabla se pasa como parámetro en la URL después de /tabla/
+    from app.services.supabase_service import get_all_from
+    
+    print(f"Petición para obtener datos de la tabla: {tabla}")
+
+    data = get_all_from(tabla)
+    
+    if isinstance(data, dict) and "error" in data:
+        return jsonify(data), 404
+    
+    return jsonify(data), 200
+
+# Endpoint de prueba para verificar la conexión con Google Sheets
