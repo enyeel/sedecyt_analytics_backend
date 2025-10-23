@@ -57,3 +57,16 @@ def get_contactos_from_sheet():
         return jsonify(contactos_json)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# Endpoint para testing de ETL script
+@api_bp.route("/run-etl", methods=["GET"])
+def run_etl():
+    from app.services.etl_script import run_etl_process
+
+    print("Iniciando el proceso ETL desde el endpoint...")
+    result = run_etl_process()
+
+    if isinstance(result, dict) and "error" in result:
+        return jsonify(result), 500
+
+    return jsonify(result), 200 
