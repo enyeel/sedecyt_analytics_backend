@@ -27,20 +27,6 @@ def get_table_data(table_name):                                 #el nombre de la
     
     return jsonify(data), 200
 
-<<<<<<< HEAD
-# Endpoint para testing de ETL script
-@api_bp.route("/run-etl", methods=["GET"])
-def run_etl():
-    from app.services.etl_script import run_etl_process
-
-    print("Iniciando el proceso ETL desde el endpoint...")
-    result = run_etl_process()
-
-    if isinstance(result, dict) and "error" in result:
-        return jsonify(result), 500
-
-    return jsonify(result), 200 
-=======
 #endpoint de prueba para verificar conexión con supabase
 @api_bp.route("tabla-no-auth/<string:tabla>", methods=["GET"])
 def get_table(tabla):                                 #el nombre de la tabla se pasa como parámetro en la URL después de /tabla/
@@ -71,4 +57,3 @@ def get_contactos_from_sheet():
         return jsonify(contactos_json)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
->>>>>>> 2efb001593f81d518f45e7aa01ed548b1d946f53
