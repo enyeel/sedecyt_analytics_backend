@@ -28,7 +28,6 @@ def get_table_data(table_name):                                 #el nombre de la
     return jsonify(data), 200
 
 #endpoint de prueba para verificar conexión con supabase
-
 @api_bp.route("tabla-no-auth/<string:tabla>", methods=["GET"])
 def get_table(tabla):                                 #el nombre de la tabla se pasa como parámetro en la URL después de /tabla/
     from app.services.supabase_service import get_all_from
@@ -43,3 +42,18 @@ def get_table(tabla):                                 #el nombre de la tabla se 
     return jsonify(data), 200
 
 # Endpoint de prueba para verificar la conexión con Google Sheets
+
+@api_bp.route("/sheets", methods=['GET'])
+@token_required
+def get_contactos_from_sheet():
+    from ..services import google_sheets_service
+
+    print("Petición para obtener datos de Google Sheets")
+
+    try:
+        # Solo le pasas el nombre de la pestaña, ¡y listo!
+        df_contactos = google_sheets_service.read_worksheet_as_dataframe("Formulario Desarrollo Industria")
+        contactos_json = df_contactos.to_dict(orient='records')
+        return jsonify(contactos_json)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
