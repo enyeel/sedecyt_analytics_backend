@@ -1,6 +1,6 @@
 import re
 import pandas as pd
-from typing import Union, List
+from typing import Union, List, Dict
 
 # Patrón para identificar caracteres no alfanuméricos que queremos eliminar (como guiones, espacios, etc.)
 ALPHANUM_PATTERN = re.compile(r'[^a-zA-Z0-9]') 
@@ -404,3 +404,57 @@ def clean_text_for_analysis(text: Union[str, float]) -> str:
     
     # 4. ESTANDARIZACIÓN BÁSICA
     return text.strip().upper() # Todo en MAYÚSCULAS para facilitar el análisis de agrupamiento.
+
+# --- EXTRACCION DE CERTIFICACIONES INDIVIDUALES ---
+
+# Suponiendo que CERTIFICATIONS_CATALOG se importa de certifications_catalog_data
+from config.certifications_catalog_data import CERTIFICATIONS_CATALOG # Ajusta la importación según tu estructura real
+
+# Crear un mapeo eficiente de palabras clave a acrónimos (ej: "ISO 9001" -> "ISO9001")
+KEYWORD_TO_ACRONYM = {}
+for cert in CERTIFICATIONS_CATALOG:
+    acronym = cert['acronym']
+    # Usamos la palabra clave en MAYÚSCULAS para el matching (asumiendo que el texto ya está en UPPER)
+    for keyword in cert['search_keywords']:
+        KEYWORD_TO_ACRONYM[keyword.upper()] = acronym
+
+def extract_certifications_acronyms(text: str) -> List[str]:
+    """
+    Escanea el texto limpio de certificaciones y devuelve una lista de acrónimos únicos.
+    """
+    if not text or pd.isna(text):
+        return []
+    
+    # 1. Asegurar mayúsculas y separar por palabras/frases
+    text_upper = text.upper()
+    found_acronyms = set()
+    
+    # 2. Iterar sobre las palabras clave del catálogo (de mayor longitud a menor)
+    # Esto asegura que "ISO 9001" se detecte antes que solo "ISO" o "9001"
+    sorted_keywords = sorted(KEYWORD_TO_ACRONYM.keys(), key=len, reverse=True)
+    
+    for keyword in sorted_keywords:
+        # Usamos re.search para encontrar la palabra clave como una subcadena
+        # Nota: Usar el límite de la palabra (\b) puede ser demasiado estricto a veces,
+        # así que usamos la simple búsqueda de subcadena.
+        if keyword in text_upper:
+            acronym = KEYWORD_TO_ACRONYM[keyword]
+            
+            # 3. Evitar falsos positivos y duplicados
+            if acronym not in found_acronyms:
+                
+                # Regla de Exclusión: Evitar que 'ISO 9000' capture todo si ya se encontró algo más específico
+                if acronym == 'ISO9000' and any(cert.startswith('ISO') and cert != 'ISO9000' for cert in found_acronyms):
+                    continue # Si ya encontré ISO9001, ignoro ISO9000
+                
+                # Regla de Exclusión: Evitar que la clave "ISO" capture todo si ya se encontró algo más específico
+                if keyword == 'ISO' and any(cert.startswith('ISO') and cert != 'ISO' for cert in found_acronyms):
+                    continue
+
+                found_acronyms.add(acronym)
+                
+                # Opcional: Eliminar la palabra clave ya encontrada del texto para evitar doble conteo 
+                # de otras certificaciones que estén incluidas. (e.g. Si elimino 'ISO 9001', el texto
+                # restante puede ser 'ISO 14001') - ESTO LO DEJAMOS PARA LA VERSIÓN FINAL.
+                
+    return sorted(list(found_acronyms))

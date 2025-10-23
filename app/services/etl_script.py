@@ -10,10 +10,10 @@ import re
 import ast
 import os
 
-output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'outputs')
+output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data','outputs')
 os.makedirs(output_dir, exist_ok=True)
 
-def load_config(file_path='config.json'):
+def load_config(file_path='config/cleaning_map.json'):
     """Carga y devuelve el diccionario de configuración."""
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
@@ -181,7 +181,7 @@ def rescue_company_id(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-if __name__ == '__main__':
+def run_etl_process():
     print("Corriendo script")
     # Obtener, seleccionar y preparar datos a procesar
     print("Obteniendo datos...")
@@ -282,3 +282,34 @@ if __name__ == '__main__':
     print(f"CSV de análisis generado para revisión manual: {nombre_archivo}")
     
     df_clean['respuestas'].to_csv(os.path.join(output_dir, 'output_respuestas_limpio.csv'), index=False, encoding='utf-8')
+
+    # ***************************************************************
+    # 🚨 PRUEBA RÁPIDA DE EXTRACCIÓN DE ACRÓNIMOS
+    # ***************************************************************
+
+    # Aplicar la función de extracción (asumiendo que la función extract_certifications_acronyms 
+    # está definida o importada en este script para la prueba)
+    df_analisis['other_certifications_acronyms'] = df_analisis['otra_certificacion_txt_limpio'].apply(
+        cleaner.extract_certifications_acronyms
+    )
+
+    # Convertir la lista de acrónimos a una cadena separada por comas para el CSV
+    df_analisis['other_certifications'] = df_analisis['other_certifications_acronyms'].apply(
+        lambda x: ', '.join(x) if x else ''
+    )
+
+
+    # Seleccionar las columnas para la prueba final
+    df_test_output = df_analisis[['rfc_limpio', 'otra_certificacion_txt_limpio', 'other_certifications']].copy()
+
+    # Exportar el CSV de prueba
+    nombre_archivo_test = 'analisis_certificaciones_TEST_ACRONIMOS.csv'
+    df_test_output.to_csv(os.path.join(output_dir, nombre_archivo_test), index=False, encoding='utf-8')
+
+    print(f"\n✅ ¡CSV de PRUEBA de acrónimos generado para revisión: {nombre_archivo_test}!")
+    print("Revisa este archivo para validar si las 'search_keywords' están funcionando.")
+
+    return df_analisis
+
+if __name__ == '__main__':
+    run_etl_process()

@@ -1,0 +1,122 @@
+{
+    "cleaning_map": {
+        "Correo de la empresa": {
+            "target_db_col": "clean_email",
+            "target_table": "contacts",
+            "clean_func": "clean_email"
+        },
+        "Contact first name": {
+            "target_db_col": "first_name",
+            "target_table": "contacts",
+            "clean_func": "clean_contact_name"
+        },
+        "Contact last name": {
+            "target_db_col": "last_name",
+            "target_table": "contacts",
+            "clean_func": "clean_contact_name"
+        },
+        "Cargo": {
+            "target_db_col": "clean_position",
+            "target_table": "contacts",
+            "clean_func": "clean_cargo_smart_case"
+        },
+        "Número de teléfono de la empresa": {
+            "target_db_col": "company_phone_e164",
+            "target_table": "contacts",
+            "clean_func": "clean_phone_to_e164"
+        },
+        "Número de teléfono personal": {
+            "target_db_col": "personal_phone_e164",
+            "target_table": "contacts",
+            "clean_func": "clean_phone_to_e164"
+        },
+        "RFC": {
+            "target_db_col": "clean_rfc",
+            "target_table": "companies",
+            "clean_func": "clean_rfc"
+        },
+        "Razón o denominación social de la empresa": {
+            "target_db_col": "clean_legal_name",
+            "target_table": "companies",
+            "clean_func": "clean_company_name"
+        },
+        "Nombre comercial ( marca reconocida)": {
+            "target_db_col": "trade_name",
+            "target_table": "companies",
+            "clean_func": "clean_string"
+        },
+        "Sector": {
+            "target_db_col": "sector",
+            "target_table": "companies",
+            "clean_func": "clean_string_upper"
+        },
+        "Actividad principal dada de alta en la constancia de situación fiscal": {
+            "target_db_col": "main_activity",
+            "target_table": "companies",
+            "clean_func": "clean_string"
+        },
+        "Número de empleados": {
+            "target_db_col": "employee_count",
+            "target_table": "companies",
+            "clean_func": "clean_to_integer"
+        },
+        "Dirección": {
+            "target_db_col": "full_address",
+            "target_table": "companies",
+            "clean_func": "clean_string"
+        },
+        "Municipio": {
+            "target_db_col": "municipality",
+            "target_table": "companies",
+            "clean_func": "clean_string"
+        },
+        "Código postal": {
+            "target_db_col": "postal_code",
+            "target_table": "companies",
+            "clean_func": "clean_string_numeric"
+        },
+        "Parque Industrial": {
+            "target_db_col": "industrial_park",
+            "target_table": "companies",
+            "clean_func": "clean_string"
+        },
+        "Certificaciones ISO ": {
+            "target_db_col": "iso_certifications",
+            "target_table": "companies",
+            "clean_func": "clean_certifications_to_array"
+        },
+        "Conversion Date": {
+            "target_db_col": "response_date",
+            "target_table": "responses",
+            "clean_func": "clean_to_timestamp"
+        },
+        "Planes de expansión ": {
+            "target_db_col": "has_expansion_plans",
+            "target_table": "responses",
+            "clean_func": "clean_to_boolean"
+        },
+        "Cuenta en su estructura con un área de Ingeniería y Diseño": {
+            "target_db_col": "has_engineering_area",
+            "target_table": "responses",
+            "clean_func": "clean_to_boolean"
+        }
+    },
+    "jsonb_columns": [
+        "Principal producto o servicio que proporciona",
+        "Principales clientes",
+        "Proveeduría ",
+        "Necesidades y problemáticas",
+        "En casi de que sí, describir el proyecto de expansión",
+        "En caso de contar con otra certificación, especificar.",
+        "¿Cuál es la demanda de electricidad esperada maxima en los próximos 3 años?",
+        "¿Cuál es su demanda max actual de energia registrada en el <strong>recibo</strong> de <strong>CFE </strong>?",
+        "¿Capacidad de transformadores a adquirir?",
+        "Conversion Page",
+        "Conversion Title",
+        "Contact first name",
+        "Contact last name",
+        "Contact email",
+        "Contact ID",
+        "Apellidos"
+    ]
+}

@@ -1,6 +1,8 @@
 # .gitignore
+.venv/
 venv/
 *.pyc
+__pycache__/
 
 # ingnore credentials file
 credentials.json
@@ -12,4 +14,4 @@ credentials.json
 *.csv
 
 # archivos generados automáticamente
-/outputs/
+/data/outputs
