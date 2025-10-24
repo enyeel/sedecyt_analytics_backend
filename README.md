@@ -161,9 +161,9 @@ The following API contract is being built to serve the frontend.
 
 ## 👥 Collaborators
 
-- **(Ángel)[github.com/enyeel]** — Data processing, backend architecture & overall project design  
-- **(Emilio)[github.com/AngelGTZ28]** — API & infrastructure development (Google Cloud, Supabase integration)  
-- **(Yara)[github.com/Yara09-L]** — Frontend development & UI integration  
+- **[Ángel](github.com/enyeel)** — Data processing, backend architecture & overall project design  
+- **[Emilio](github.com/AngelGTZ28)** — API & infrastructure development (Google Cloud, Supabase integration)  
+- **[Yara](github.com/Yara09-L)** — Frontend development & UI integration  
 
 > _This project is part of the university internship program at SEDECYT Aguascalientes._
 
@@ -176,4 +176,4 @@ The following API contract is being built to serve the frontend.
 - Add statistical calculation modules for dashboard visualizations  
 - Implement additional API endpoints for frontend features  
 - Integrate frontend with backend and Supabase 
-(**[github.com/enyeel/sedecyt-analytics-frontend]**)    
+(**[github.com/enyeel/sedecyt-analytics-frontend](github.com/enyeel/sedecyt-analytics-frontend)**)    
