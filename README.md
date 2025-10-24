@@ -31,7 +31,7 @@ The frontend dashboard then queries this clean, fast, and reliable "truth table"
 
 ## Tech Stack
 
-* **Backend:** **Python 3.11**
+* **Backend:** **Python 3.12**
 * **Containerization:** **Docker**
 * **Host Platform:** **Google Cloud Run** (Serverless)
 * **Database:** **Supabase** (PostgreSQL)
@@ -53,6 +53,38 @@ Immediate next steps involve finalizing the cleaning modules for all data types 
 
 ***
 
+## 📂 Project Structure 
+
+```bash
+.gitignore
+Dockerfile
+README.md
+app/
+├── init.py
+├── api/
+│ ├── init.py
+│ └── routes.py
+├── services/
+│ ├── init.py
+│ ├── auth_decorator.py
+│ ├── data_cleaning_service.py
+│ ├── data_processing_service.py
+│ ├── etl_script.py
+│ ├── google_sheets_service.py
+│ └── supabase_service.py
+certifications.txt
+config/
+├── init.py
+├── certifications_catalog_data.py
+├── cleaning_map.json
+└── sheets_credentials.py
+requirements.txt
+run.py
+test_api.http
+```
+
+***
+
 ## Getting Started (Local Development)
 
 Instructions to get the project running locally using Docker.
@@ -69,8 +101,8 @@ Instructions to get the project running locally using Docker.
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/sedecyt-backend.git](https://github.com/your-username/sedecyt-backend.git)
-cd sedecyt-backend
+git clone https://github.com/AngelGTZ28/sedecyt_analytics_backend.git
+cd sedecyt_analytics_backend
 ```
 
 ***
@@ -124,3 +156,24 @@ The following API contract is being built to serve the frontend.
 | `GET` | `/api/empresas` | Gets a paginated list of all companies. | ⏳ Planned |
 | `GET` | `/api/empresas/<id>` | Gets the full detail for a single company. | ⏳ Planned |
 | `GET` | `/api/statistics/empresas-por-rubro` | Gets aggregated data for the "Companies by Industry" chart. | ⏳ Planned |
+
+***
+
+## 👥 Collaborators
+
+- **(Ángel)[github.com/enyeel]** — Data processing, backend architecture & overall project design  
+- **(Emilio)[github.com/AngelGTZ28]** — API & infrastructure development (Google Cloud, Supabase integration)  
+- **(Yara)[github.com/Yara09-L]** — Frontend development & UI integration  
+
+> _This project is part of the university internship program at SEDECYT Aguascalientes._
+
+---
+
+## 🔮 Future Improvements & Planned Features
+
+
+- Split the ETL service into modular components  
+- Add statistical calculation modules for dashboard visualizations  
+- Implement additional API endpoints for frontend features  
+- Integrate frontend with backend and Supabase 
+(**[github.com/enyeel/sedecyt-analytics-frontend]**)    
