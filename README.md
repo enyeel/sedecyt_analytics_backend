@@ -6,8 +6,10 @@
 
 This is the serverless backend API for **SEDECyT Analytics**, a modern data platform designed to automate economic analysis for the Secretariat of Economic Development, Science, and Technology (SEDECyT) of Aguascalientes.
 
-This service is responsible for the automated extraction, cleaning, and storage of economic data, serving it via a high-speed API to a decoupled frontend.
+This service is responsible for the automated extraction, cleaning, and storage of economic data, serving it via a high-speed API to its decoupled frontend dashboard.
 
+* **View the Backend:** `sedecyt_analytics_backend` (This repo)
+* **View the Frontend:** [sedecyt_analytics_frontend](https://github.com/enyeel/sedecyt_analytics_frontend)
 ***
 
 ## The Problem: Why This Project Exists
@@ -31,7 +33,7 @@ The frontend dashboard then queries this clean, fast, and reliable "truth table"
 
 ## Tech Stack
 
-* **Backend:** **Python 3.11**
+* **Backend:** **Python 3.12**
 * **Containerization:** **Docker**
 * **Host Platform:** **Google Cloud Run** (Serverless)
 * **Database:** **Supabase** (PostgreSQL)
@@ -47,9 +49,41 @@ This project is actively being developed as part of a university internship.
 * **Core Architecture:** The decoupled two-repo structure is in place.
 * **Deployment:** The backend is successfully containerized with Docker and deployable to Google Cloud Run.
 * **Database:** The Supabase Postgres schema is defined.
-* **ETL Script:** The data transformation script (`clean.py`) is approximately **70% complete**.
+* **ETL Script:** The data transformation script (`data_cleaner_service.py`) is approximately **70% complete**.
 
 Immediate next steps involve finalizing the cleaning modules for all data types and building out the statistical API endpoints.
+
+***
+
+## 📂 Project Structure 
+
+```bash
+.gitignore
+Dockerfile
+README.md
+app/
+├── init.py
+├── api/
+│ ├── init.py
+│ └── routes.py
+├── services/
+│ ├── init.py
+│ ├── auth_decorator.py
+│ ├── data_cleaning_service.py
+│ ├── data_processing_service.py
+│ ├── etl_script.py
+│ ├── google_sheets_service.py
+│ └── supabase_service.py
+certifications.txt
+config/
+├── init.py
+├── certifications_catalog_data.py
+├── cleaning_map.json
+└── sheets_credentials.py
+requirements.txt
+run.py
+test_api.http
+```
 
 ***
 
@@ -69,8 +103,8 @@ Instructions to get the project running locally using Docker.
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/sedecyt-backend.git](https://github.com/your-username/sedecyt-backend.git)
-cd sedecyt-backend
+git clone https://github.com/enyeel/sedecyt_analytics_backend.git
+cd sedecyt_analytics_backend
 ```
 
 ***
@@ -124,3 +158,25 @@ The following API contract is being built to serve the frontend.
 | `GET` | `/api/empresas` | Gets a paginated list of all companies. | ⏳ Planned |
 | `GET` | `/api/empresas/<id>` | Gets the full detail for a single company. | ⏳ Planned |
 | `GET` | `/api/statistics/empresas-por-rubro` | Gets aggregated data for the "Companies by Industry" chart. | ⏳ Planned |
+
+***
+
+## 👥 Collaborators
+
+* **[Ángel](https://github.com/enyeel)** — Data processing, backend architecture & overall project design  
+* **[Emilio](https://github.com/AngelGTZ28)** — API & infrastructure development (Google Cloud, Supabase integration)  
+* **[Yara](https://github.com/Yara09-L)** — Frontend development & UI integration  
+
+> _This project is part of the university internship program at SEDECYT Aguascalientes._
+
+---
+
+## 🔮 Future Improvements & Planned Features
+
+
+* Split the ETL service into modular components  
+* Add statistical calculation modules for dashboard visualizations  
+* Implement additional API endpoints for frontend features  
+* Integrate frontend with backend and Supabase 
+(**[github.com/enyeel/sedecyt-analytics-frontend](https://github.com/enyeel/sedecyt-analytics-frontend)**)    
+  
