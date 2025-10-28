@@ -49,7 +49,7 @@ This project is actively being developed as part of a university internship.
 * **Core Architecture:** The decoupled two-repo structure is in place.
 * **Deployment:** The backend is successfully containerized with Docker and deployable to Google Cloud Run.
 * **Database:** The Supabase Postgres schema is defined.
-* **ETL Script:** The data transformation script (`clean.py`) is approximately **70% complete**.
+* **ETL Script:** The data transformation script (`data_cleaner_service.py`) is approximately **70% complete**.
 
 Immediate next steps involve finalizing the cleaning modules for all data types and building out the statistical API endpoints.
 
