@@ -103,7 +103,7 @@ Instructions to get the project running locally using Docker.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/AngelGTZ28/sedecyt_analytics_backend.git
+git clone https://github.com/enyeel/sedecyt_analytics_backend.git
 cd sedecyt_analytics_backend
 ```
 
@@ -163,9 +163,9 @@ The following API contract is being built to serve the frontend.
 
 ## 👥 Collaborators
 
-- **[Ángel](https://github.com/enyeel)** — Data processing, backend architecture & overall project design  
-- **[Emilio](https://github.com/AngelGTZ28)** — API & infrastructure development (Google Cloud, Supabase integration)  
-- **[Yara](https://github.com/Yara09-L)** — Frontend development & UI integration  
+* **[Ángel](https://github.com/enyeel)** — Data processing, backend architecture & overall project design  
+* **[Emilio](https://github.com/AngelGTZ28)** — API & infrastructure development (Google Cloud, Supabase integration)  
+* **[Yara](https://github.com/Yara09-L)** — Frontend development & UI integration  
 
 > _This project is part of the university internship program at SEDECYT Aguascalientes._
 
@@ -174,9 +174,9 @@ The following API contract is being built to serve the frontend.
 ## 🔮 Future Improvements & Planned Features
 
 
-- Split the ETL service into modular components  
-- Add statistical calculation modules for dashboard visualizations  
-- Implement additional API endpoints for frontend features  
-- Integrate frontend with backend and Supabase 
+* Split the ETL service into modular components  
+* Add statistical calculation modules for dashboard visualizations  
+* Implement additional API endpoints for frontend features  
+* Integrate frontend with backend and Supabase 
 (**[github.com/enyeel/sedecyt-analytics-frontend](https://github.com/enyeel/sedecyt-analytics-frontend)**)    
   
