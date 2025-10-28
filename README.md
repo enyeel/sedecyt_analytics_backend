@@ -6,8 +6,10 @@
 
 This is the serverless backend API for **SEDECyT Analytics**, a modern data platform designed to automate economic analysis for the Secretariat of Economic Development, Science, and Technology (SEDECyT) of Aguascalientes.
 
-This service is responsible for the automated extraction, cleaning, and storage of economic data, serving it via a high-speed API to a decoupled frontend.
+This service is responsible for the automated extraction, cleaning, and storage of economic data, serving it via a high-speed API to its decoupled frontend dashboard.
 
+* **View the Backend:** `sedecyt_analytics_backend` (This repo)
+* **View the Frontend:** [sedecyt_analytics_frontend](https://github.com/enyeel/sedecyt_analytics_frontend)
 ***
 
 ## The Problem: Why This Project Exists
@@ -177,3 +179,4 @@ The following API contract is being built to serve the frontend.
 - Implement additional API endpoints for frontend features  
 - Integrate frontend with backend and Supabase 
 (**[github.com/enyeel/sedecyt-analytics-frontend](https://github.com/enyeel/sedecyt-analytics-frontend)**)    
+  
