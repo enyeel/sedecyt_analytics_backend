@@ -307,8 +307,8 @@ def rescue_names(row: pd.Series) -> pd.Series:
     2. Eliminación de apellidos duplicados en el nombre.
     3. División de nombre/apellido si el campo de apellido está vacío.
     """
-    nombre = str(row['nombre_limpio']).strip()
-    apellido = str(row['apellido_limpio']).strip()
+    nombre = str(row['first_name']).strip()
+    apellido = str(row['last_name']).strip()
     
     if not nombre and not apellido:
         return row
@@ -339,7 +339,7 @@ def rescue_names(row: pd.Series) -> pd.Series:
                 # La inicial coincide con el inicio de un apellido (ej. 'B' con 'Bracamontes').
                 # La eliminamos del nombre.
                 nombre_new = ' '.join(nombre_words[:-1]).strip()
-                row['nombre_limpio'] = nombre_new
+                row['first_name'] = nombre_new
                 nombre = nombre_new # Actualizar la variable para el paso 2
 
     # -------------------------------------------------------------
@@ -351,15 +351,15 @@ def rescue_names(row: pd.Series) -> pd.Series:
         # Intentar con el apellido completo
         if apellido in nombre:
             nombre_new = nombre.replace(apellido, '').strip()
-            row['nombre_limpio'] = re.sub(r'\s+', ' ', nombre_new)
+            row['first_name'] = re.sub(r'\s+', ' ', nombre_new)
             
-            if len(row['nombre_limpio'].split()) >= 1: return row
-            row['nombre_limpio'] = nombre 
+            if len(row['first_name'].split()) >= 1: return row
+            row['first_name'] = nombre 
 
         # Intentar con el primer apellido
         elif len(apellido_parts) > 0 and apellido_parts[0] in nombre:
             nombre_new = nombre.replace(apellido_parts[0], '').strip()
-            row['nombre_limpio'] = re.sub(r'\s+', ' ', nombre_new)
+            row['first_name'] = re.sub(r'\s+', ' ', nombre_new)
             return row
 
     # -------------------------------------------------------------
@@ -370,12 +370,12 @@ def rescue_names(row: pd.Series) -> pd.Series:
         num_words = len(words)
         
         if num_words >= 3:
-            row['apellido_limpio'] = ' '.join(words[-2:])
-            row['nombre_limpio'] = ' '.join(words[:-2])
+            row['last_name'] = ' '.join(words[-2:])
+            row['first_name'] = ' '.join(words[:-2])
             
         elif num_words == 2:
-            row['apellido_limpio'] = words[-1]
-            row['nombre_limpio'] = words[0]
+            row['last_name'] = words[-1]
+            row['first_name'] = words[0]
             
     return row
 
@@ -425,36 +425,36 @@ def extract_certifications_acronyms(text: str) -> List[str]:
     if not text or pd.isna(text):
         return []
     
-    # 1. Asegurar mayúsculas y separar por palabras/frases
     text_upper = text.upper()
     found_acronyms = set()
     
-    # 2. Iterar sobre las palabras clave del catálogo (de mayor longitud a menor)
-    # Esto asegura que "ISO 9001" se detecte antes que solo "ISO" o "9001"
+    # 1. Iterar sobre las palabras clave del catálogo (de mayor longitud a menor)
+    # Esto asegura que "ISO 9001" se detecte antes que solo "9001"
     sorted_keywords = sorted(KEYWORD_TO_ACRONYM.keys(), key=len, reverse=True)
     
     for keyword in sorted_keywords:
-        # Usamos re.search para encontrar la palabra clave como una subcadena
-        # Nota: Usar el límite de la palabra (\b) puede ser demasiado estricto a veces,
-        # así que usamos la simple búsqueda de subcadena.
-        if keyword in text_upper:
+        # 2. Usar RegEx con word boundaries (\b) para buscar la palabra clave como una palabra completa.
+        # Esto evita que "ETA" en "BETA" coincida con "SMETA".
+        # El patrón se construye como r'\bKEYWORD\b'.
+        # Se escapa el keyword para manejar caracteres especiales como '+' en 'C++'.
+        pattern = r'\b' + re.escape(keyword) + r'\b'
+        
+        if re.search(pattern, text_upper):
             acronym = KEYWORD_TO_ACRONYM[keyword]
             
-            # 3. Evitar falsos positivos y duplicados
+            # 3. Lógica de exclusión para evitar duplicados y falsos positivos
             if acronym not in found_acronyms:
                 
-                # Regla de Exclusión: Evitar que 'ISO 9000' capture todo si ya se encontró algo más específico
+                # Regla de Exclusión: Si ya encontramos una ISO específica (e.g., ISO9001),
+                # no agregamos la genérica 'ISO9000' si su keyword era 'ISO 9000'.
                 if acronym == 'ISO9000' and any(cert.startswith('ISO') and cert != 'ISO9000' for cert in found_acronyms):
-                    continue # Si ya encontré ISO9001, ignoro ISO9000
-                
-                # Regla de Exclusión: Evitar que la clave "ISO" capture todo si ya se encontró algo más específico
-                if keyword == 'ISO' and any(cert.startswith('ISO') and cert != 'ISO' for cert in found_acronyms):
                     continue
 
                 found_acronyms.add(acronym)
                 
-                # Opcional: Eliminar la palabra clave ya encontrada del texto para evitar doble conteo 
-                # de otras certificaciones que estén incluidas. (e.g. Si elimino 'ISO 9001', el texto
-                # restante puede ser 'ISO 14001') - ESTO LO DEJAMOS PARA LA VERSIÓN FINAL.
+                # 4. Reemplazar la palabra clave encontrada para evitar que sea detectada de nuevo
+                # por una palabra clave más corta. Por ejemplo, después de encontrar "ISO 9001",
+                # lo reemplazamos para que "9001" no lo vuelva a encontrar.
+                text_upper = re.sub(pattern, '', text_upper, count=1)
                 
     return sorted(list(found_acronyms))

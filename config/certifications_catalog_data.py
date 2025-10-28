@@ -7,7 +7,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "ISO9001",
         "category": "Calidad",
         "compliance_type": "Internacional",
-        "search_keywords": ["ISO 9001", "9001", "ISO9001", "ISO DE CALIDAD", "9000"],
+        "search_keywords": ["ISO 9001", "9001:2015", "ISO9001", "ISO DE CALIDAD"],
         "is_active": True
     },
     {
@@ -15,7 +15,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "ISO14001",
         "category": "Medio Ambiente",
         "compliance_type": "Internacional",
-        "search_keywords": ["ISO 14001", "14001", "AMBIENTAL", "ECO"],
+        "search_keywords": ["ISO 14001", "14001:2015", "AMBIENTAL", "ECO"],
         "is_active": True
     },
     {
@@ -23,7 +23,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "ISO45001",
         "category": "Seguridad y Salud Ocupacional",
         "compliance_type": "Internacional",
-        "search_keywords": ["ISO 45001", "45001", "OHSAS", "45000", "SALUD OCUPACIONAL"],
+        "search_keywords": ["ISO 45001", "45001:2018", "OHSAS", "45000", "SALUD OCUPACIONAL"],
         "is_active": True
     },
     {
@@ -31,7 +31,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "ISO22000",
         "category": "Inocuidad Alimentaria",
         "compliance_type": "Internacional",
-        "search_keywords": ["ISO 22000", "22000", "FOOD SAFETY"],
+        "search_keywords": ["ISO 22000", "22000", "FOOD SAFETY", "INOCUIDAD"],
         "is_active": True
     },
     {
@@ -96,7 +96,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "ISO9000",
         "category": "Calidad",
         "compliance_type": "Internacional",
-        "search_keywords": ["ISO 9000", "ISO", "NORMA ISO"],
+        "search_keywords": ["ISO 9000", "FAMILIA ISO 9000"],
         "is_active": True
     },
     {
@@ -104,7 +104,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "ISO16949",
         "category": "Automotriz",
         "compliance_type": "Internacional",
-        "search_keywords": ["ISO 16949", "TS 16949", "ISO-TS"],
+        "search_keywords": ["ISO 16949", "TS 16949"],
         "is_active": True
     },
     
@@ -116,7 +116,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "IATF16949",
         "category": "Automotriz",
         "compliance_type": "Internacional",
-        "search_keywords": ["IATF 16949", "IATF", "16949", "ISO/TS"],
+        "search_keywords": ["IATF 16949", "IATF", "16949"],
         "is_active": True
     },
     {
@@ -276,7 +276,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "CE",
         "category": "Acceso a Mercado",
         "compliance_type": "Internacional",
-        "search_keywords": ["MARCADO CE", "CONFORMIDAD EUROPEA", "CE"],
+        "search_keywords": ["MARCADO CE", "CONFORMIDAD EUROPEA", " CE "],
         "is_active": True
     },
     {
@@ -308,7 +308,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "MSCS",
         "category": "Comercial Estratégico",
         "compliance_type": "Comercial Estratégico",
-        "search_keywords": ["MICROSOFT CIRCULO DE PROVEEDORES", "CIRCLE OF SUPPLIERS", "CIRCULO DE PROVEEDORES"],
+        "search_keywords": ["MICROSOFT CIRCULO DE PROVEEDORES", "CIRCLE OF SUPPLIERS", "CIRCULO DE PROVEEDORES", "CICRCULO DE PROVEEDORES"],
         "is_active": True
     },
     {
@@ -332,7 +332,26 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "BETA/ETA",
         "category": "Otras",
         "compliance_type": "General",
-        "search_keywords": ["BETA", "ETA", "B E T A"],
+        "search_keywords": ["BETA", "B E T A"],
+        "is_active": True
+    },
+    # --------------------------------------------------------------------------
+    # Nuevas Certificaciones Identificadas
+    # --------------------------------------------------------------------------
+    {
+        "name": "NOM-001-CONAGUA-2011",
+        "acronym": "NOM001-CONAGUA",
+        "category": "Agua",
+        "compliance_type": "Nacional",
+        "search_keywords": ["NOM 001 CONAGUA", "NOM-001-CONAGUA"],
+        "is_active": True
+    },
+    {
+        "name": "DC-3",
+        "acronym": "DC3",
+        "category": "Capacitación Laboral",
+        "compliance_type": "Nacional",
+        "search_keywords": ["DC3", "DC-3", "CONSTANCIA DE COMPETENCIAS"],
         "is_active": True
     },
 ]
