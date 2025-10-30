@@ -35,6 +35,14 @@ CERTIFICATIONS_CATALOG = [
         "is_active": True
     },
     {
+        "name": "ISO 20000",
+        "acronym": "ISO20000",
+        "category": "IT Service Management",
+        "compliance_type": "Internacional",
+        "search_keywords": ["ISO 20000", "20000", "ITSM"],
+        "is_active": True
+    },
+    {
         "name": "ISO 27001",
         "acronym": "ISO27001",
         "category": "Seguridad de la Información",
@@ -47,7 +55,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "ISO17025",
         "category": "Laboratorios / Metrología",
         "compliance_type": "Internacional",
-        "search_keywords": ["ISO 17025", "17025", "CALIBRACION", "LABORATORIOS"],
+        "search_keywords": ["ISO 17025", "17025", "CALIBRACION", "LABORATORIOS", "EMA"],
         "is_active": True
     },
     {
@@ -132,7 +140,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "AS9100",
         "category": "Aeroespacial",
         "compliance_type": "Internacional",
-        "search_keywords": ["AS9100", "AS 9100", "AEROESPACIAL"],
+        "search_keywords": ["AS9100", "AS 9100", "AEROESPACIAL", "AS9100D"],
         "is_active": True
     },
     {
@@ -161,6 +169,22 @@ CERTIFICATIONS_CATALOG = [
         "category": "Seguridad Logística",
         "compliance_type": "Comercial Estratégico",
         "search_keywords": ["CTPAT", "C-TPAT", "CT PAT", "SECUENCIA CTPAT"],
+        "is_active": True
+    },
+    {
+        "name": "DOT (Department of Transportation)",
+        "acronym": "DOT",
+        "category": "Seguridad Logística",
+        "compliance_type": "Nacional (USA)",
+        "search_keywords": ["DOT", "DEPARTMENT OF TRANSPORTATION"],
+        "is_active": True
+    },
+    {
+        "name": "SCAC (Standard Carrier Alpha Code)",
+        "acronym": "SCAC",
+        "category": "Seguridad Logística",
+        "compliance_type": "Nacional (USA)",
+        "search_keywords": ["SCAC", "STANDARD CARRIER ALPHA CODE"],
         "is_active": True
     },
     {
@@ -197,6 +221,14 @@ CERTIFICATIONS_CATALOG = [
         "category": "Inocuidad Alimentaria",
         "compliance_type": "Internacional",
         "search_keywords": ["FSSC 22000", "22000", "FSCC"],
+        "is_active": True
+    },
+    {
+        "name": "SQF (Safe Quality Food)",
+        "acronym": "SQF",
+        "category": "Inocuidad Alimentaria",
+        "compliance_type": "Internacional",
+        "search_keywords": ["SQF", "SAFE QUALITY FOOD"],
         "is_active": True
     },
     {
@@ -335,6 +367,58 @@ CERTIFICATIONS_CATALOG = [
         "search_keywords": ["BETA", "B E T A"],
         "is_active": True
     },
+    {
+        "name": "Dun & Bradstreet",
+        "acronym": "DUNS",
+        "category": "Comercial Estratégico",
+        "compliance_type": "Internacional",
+        "search_keywords": ["DUNS", "DUN & BRADSTREET", "CIALDUNS&BRANDNEST"],
+        "is_active": True
+    },
+    {
+        "name": "ISTQB (International Software Testing Qualifications Board)",
+        "acronym": "ISTQB",
+        "category": "IT / Software",
+        "compliance_type": "Internacional",
+        "search_keywords": ["ISTQB"],
+        "is_active": True
+    },
+    # --------------------------------------------------------------------------
+    # Certificaciones Mexicanas (NOM, NMX, etc.)
+    # --------------------------------------------------------------------------
+    {
+        "name": "Industria Limpia (PROFEPA)",
+        "acronym": "INDUSTRIA-LIMPIA",
+        "category": "Medio Ambiente",
+        "compliance_type": "Nacional",
+        "search_keywords": ["INDUSTRIA LIMPIA"],
+        "is_active": True
+    },
+    {
+        "name": "Registro de Prestadoras de Servicios Especializados (REPSE)",
+        "acronym": "REPSE",
+        "category": "Laboral",
+        "compliance_type": "Nacional",
+        "search_keywords": ["REPSE"],
+        "is_active": True
+    },
+    {
+        "name": "Tipo Inspección Federal (TIF)",
+        "acronym": "TIF",
+        "category": "Inocuidad Alimentaria",
+        "compliance_type": "Nacional",
+        "search_keywords": ["TIF", "TIPO INSPECCION FEDERAL"],
+        "is_active": True
+    },
+    {
+        "name": "CONOCER",
+        "acronym": "CONOCER",
+        "category": "Capacitación Laboral",
+        "compliance_type": "Nacional",
+        "search_keywords": ["CONOCER", "EC0217", "EC0076"],
+        "is_active": True
+    },
+
     # --------------------------------------------------------------------------
     # Nuevas Certificaciones Identificadas
     # --------------------------------------------------------------------------
@@ -343,7 +427,7 @@ CERTIFICATIONS_CATALOG = [
         "acronym": "NOM001-CONAGUA",
         "category": "Agua",
         "compliance_type": "Nacional",
-        "search_keywords": ["NOM 001 CONAGUA", "NOM-001-CONAGUA"],
+        "search_keywords": ["NOM 001 CONAGUA", "NOM-001-CONAGUA", "NOM-001-CNA"],
         "is_active": True
     },
     {
@@ -354,4 +438,28 @@ CERTIFICATIONS_CATALOG = [
         "search_keywords": ["DC3", "DC-3", "CONSTANCIA DE COMPETENCIAS"],
         "is_active": True
     },
+    {
+        "name": "NOM-002-CNA-1995",
+        "acronym": "NOM002-CNA",
+        "category": "Agua",
+        "compliance_type": "Nacional",
+        "search_keywords": ["NOM 002 CNA", "NOM-002-CNA"],
+        "is_active": True
+    },
+    {
+        "name": "ISO 10467",
+        "acronym": "ISO10467",
+        "category": "Producto",
+        "compliance_type": "Internacional",
+        "search_keywords": ["ISO 10467", "ISO10467"],
+        "is_active": True
+    },
+    {
+        "name": "ISO 10639",
+        "acronym": "ISO10639",
+        "category": "Producto",
+        "compliance_type": "Internacional",
+        "search_keywords": ["ISO 10639", "ISO10639"],
+        "is_active": True
+    }
 ]
