@@ -1,11 +1,14 @@
 from dotenv import load_dotenv
 import json
 import os
+import pandas as pd
 
 # Import the new modularized services
 from app.services.google_sheets_service import read_worksheet_as_dataframe
 from app.services.data_processing_service import clean_and_process_data
 from app.services.certification_analysis_service import analyze_other_certifications
+from app.services.supabase_service import upload_dataframe_to_supabase 
+from config.certifications_catalog_data import CERTIFICATIONS_CATALOG
 
 output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data','outputs')
 os.makedirs(output_dir, exist_ok=True)
@@ -51,6 +54,15 @@ def run_etl_process():
     analysis_file_path = os.path.join(output_dir, 'analysis_other_certifications.csv')
     df_cert_analysis.to_csv(analysis_file_path, index=False, encoding='utf-8')
     print(f"  - Saved certification analysis to {analysis_file_path}")
+
+    # --- 5. UPLOAD TO SUPABASE ---
+    print("\nStep 5: Uploading data to Supabase...")
+    # upload_dataframe_to_supabase(processed_data['companies'], 'companies')
+    # upload_dataframe_to_supabase(processed_data['contacts'], 'contacts')
+    # upload_dataframe_to_supabase(processed_data['responses'], 'responses')
+    # Upload the certifications catalog table from config/certifications_catalog_data.py
+    # df_cert_catalog = pd.DataFrame(CERTIFICATIONS_CATALOG)
+    # upload_dataframe_to_supabase(df_cert_catalog, 'certifications_catalog')
 
     print("\n✅ ETL process completed successfully!")
 

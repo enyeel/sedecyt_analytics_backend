@@ -57,16 +57,23 @@ def get_contactos_from_sheet():
         return jsonify(contactos_json)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@api_bp.route("/dashboards", methods=['GET'])
+@token_required
+def get_all_dashboards():
+    """
+    Endpoint to get the list of all available dashboards.
+    """
+    from data.inputs.mock_dashboards import MOCK_DASHBOARDS
+    print("Petición para obtener todos los dashboards")
+    return jsonify(MOCK_DASHBOARDS), 200
     
-# Endpoint para testing de ETL script
-@api_bp.route("/run-etl", methods=["GET"])
-def run_etl():
-    from app.services.etl_script import run_etl_process
-
-    print("Iniciando el proceso ETL desde el endpoint...")
-    result = run_etl_process()
-
-    if isinstance(result, dict) and "error" in result:
-        return jsonify(result), 500
-
-    return jsonify(result), 200 
+    
+# @api_bp.route("/get-dashboard/<string:dashboard-id>", methods=['GET'])
+# @token_required
+# def get_dashboard(dashboard_id):
+#     from data.inputs.mock_dashboards import MOCK_DASHBOARDS
+#     
+#     print(f"Petición para obtener el dashboard con ID: {dashboard_id}")
+#     
+#     return 0
