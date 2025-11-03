@@ -44,7 +44,7 @@ def get_table(tabla):                                 #el nombre de la tabla se 
 # Endpoint de prueba para verificar la conexión con Google Sheets
 
 @api_bp.route("/sheets", methods=['GET'])
-@token_required
+#@token_required
 def get_contactos_from_sheet():
     from ..services import google_sheets_service
 
