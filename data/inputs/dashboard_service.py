@@ -1,5 +1,5 @@
 import pandas as pd
-from . import supabase_service
+from app.services import supabase_service
 from data.inputs.mock_dashboards import MOCK_DASHBOARDS
 
 # --- Chart Generation Functions ---
