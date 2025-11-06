@@ -54,7 +54,7 @@ def get_contactos_from_sheet():
         # Solo le pasas el nombre de la pestaña, ¡y listo!
         df_contactos = google_sheets_service.read_worksheet_as_dataframe("Formulario Desarrollo Industria")
         contactos_json = df_contactos.to_dict(orient='records')
-        return jsonify(contactos_json)
+        return jsonify(contactos_json), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
