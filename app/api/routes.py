@@ -62,11 +62,14 @@ def get_contactos_from_sheet():
 @token_required
 def get_all_dashboards():
     """
-    Endpoint to get the list of all available dashboards.
+    Endpoint to get the list of all available dashboards, with dynamic data.
     """
-    from data.inputs.mock_dashboards import MOCK_DASHBOARDS
+    #from data.inputs.mock_dashboards import MOCK_DASHBOARDS
+    from data.inputs import dashboard_service
     print("Petición para obtener todos los dashboards")
-    return jsonify(MOCK_DASHBOARDS), 200
+    all_dashboards = dashboard_service.get_dashboards_with_data()
+    #all_dashboards = MOCK_DASHBOARDS
+    return jsonify(all_dashboards), 200
     
     
 # @api_bp.route("/get-dashboard/<string:dashboard-id>", methods=['GET'])

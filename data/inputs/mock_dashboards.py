@@ -68,4 +68,19 @@ MOCK_DASHBOARDS = [
     "imageUrl": 'https://placehold.co/400x200/FF0066/FFFFFF?text=Empleo',
     "charts": [] # Este no tiene gráficas por ahora
   },
-];
+  {
+    "id": 'companies-summary',
+    "title": 'Análisis de Empresas',
+    "description": 'Distribución de empresas registradas por sector y municipio.',
+    "imageUrl": 'https://placehold.co/400x200/6A5ACD/FFFFFF?text=Empresas',
+    "charts": [] # Se llenará dinámicamente desde el servicio
+  }
+]
+
+#CURSO DE PROSPECTTIVA
+#TOP 10 EMPRESAS QUE.. REPORTES
+#PROPUESTAS DE DATOS Q PUEDEN SER RELEVANTES
+#CUANTOS REPORTES SE CONTESTARON COMPLETOS O HASTA DONDE
+#PEDIR RESPONDER ENCUESTA
+#BUSQUEDA DE EMPRESAS
+# REVISAR CONXION CON HUBSPOT
