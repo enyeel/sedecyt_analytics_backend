@@ -10,6 +10,13 @@ LEGAL_SUFFIX_PATTERN = re.compile(r'\s+(S\.\s*A\.\s*(DE\s*C\.\s*V\.|CV)?|S\.\s*C
 
 # --- FUNCIONES CRÍTICAS DE NORMALIZACIÓN (Nivel 1) ---
 
+def no_cleaning(text: Union[str, float]) -> Union[str, float]:
+    """
+    Función de limpieza que no realiza ninguna modificación.
+    Útil para columnas que no requieren limpieza.
+    """
+    return text
+
 def clean_rfc(text: Union[str, float]) -> str:
     """
     Limpia y valida RFC mexicano (12 o 13 caracteres) o retiene IDs extranjeros.

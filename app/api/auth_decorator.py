@@ -1,20 +1,8 @@
 from functools import wraps
 from flask import request, jsonify
 import os 
-from supabase import create_client, Client
+from app.core.connections.supabase_service import supabase
 
-supabase_url = os.environ.get("SUPABASE_URL")
-supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
-
-# --- LÍNEAS DE DEPURACIÓN ---
-print("--- INICIANDO DEPURACIÓN DE VARIABLES ---")
-print(f"URL leída por Python: '{supabase_url}'")
-print(f"Tipo de dato de la URL: {type(supabase_url)}")
-print(f"Key leída por Python (primeros 5 caracteres): '{str(supabase_key)[:5]}...'")
-print("--- FIN DE DEPURACIÓN ---")
-# --- FIN DE LÍNEAS DE DEPURACIÓN ---
-
-supabase: Client = create_client(supabase_url, supabase_key)
 
 def token_required(f):
     @wraps(f)
@@ -36,4 +24,3 @@ def token_required(f):
         return f(*args, **kwargs)
     
     return decorated
-

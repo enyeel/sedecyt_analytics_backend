@@ -1,7 +1,7 @@
 import pandas as pd
 import ast
 import os
-from app.services import data_cleaning_service as cleaner
+from app.pipelines.etl import cleaning as cleaner
 
 def _get_other_certification_text(json_str: str) -> str:
     """

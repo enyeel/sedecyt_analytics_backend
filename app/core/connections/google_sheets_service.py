@@ -34,4 +34,3 @@ def read_worksheet_as_dataframe(worksheet_name: str) -> pd.DataFrame:
     data = worksheet.get_all_records()
     df = pd.DataFrame(data)
     return df
-

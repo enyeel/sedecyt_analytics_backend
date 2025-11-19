@@ -1,5 +1,5 @@
 import pandas as pd
-import app.services.data_cleaning_service as cleaner
+from app.pipelines.etl import cleaning as cleaner
 
 def clean_and_process_data(df: pd.DataFrame, config: dict) -> dict:
     """

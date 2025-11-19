@@ -85,6 +85,11 @@
             "target_table": "companies",
             "clean_func": "clean_certifications_to_array"
         },
+        "Proveeduría ": {
+            "target_db_col": "procurement_tier",
+            "target_table": "companies",
+            "clean_func": "no_cleaning"
+        },
         "Conversion Date": {
             "target_db_col": "response_date",
             "target_table": "responses",

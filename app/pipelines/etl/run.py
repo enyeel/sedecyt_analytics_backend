@@ -4,13 +4,13 @@ import os
 import pandas as pd
 
 # Import the new modularized services
-from app.services.google_sheets_service import read_worksheet_as_dataframe
-from app.services.data_processing_service import clean_and_process_data
-from app.services.certification_analysis_service import analyze_other_certifications
-from app.services.supabase_service import upload_dataframe_to_supabase 
+from app.core.connections.google_sheets_service import read_worksheet_as_dataframe
+from app.pipelines.etl.processing import clean_and_process_data
+from app.pipelines.etl.certifications import analyze_other_certifications
+from app.core.connections.supabase_service import upload_dataframe_to_supabase 
 from config.certifications_catalog_data import CERTIFICATIONS_CATALOG
 
-output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data','outputs')
+output_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data','outputs')
 os.makedirs(output_dir, exist_ok=True)
 
 def load_config(file_path='config/cleaning_map.json'):
@@ -46,7 +46,7 @@ def run_etl_process():
     # --- 4. LOAD (Export to CSV for now) ---
     print("\nStep 4: Exporting processed data to CSV files...")
     for name, df in processed_data.items():
-        file_path = os.path.join(output_dir, f'output_{name}_clean.csv')
+        file_path = os.path.join(output_dir, f'{name}_clean.csv')
         df.to_csv(file_path, index=False, encoding='utf-8')
         print(f"  - Saved {name} data to {file_path}")
     
@@ -57,8 +57,8 @@ def run_etl_process():
 
     # --- 5. UPLOAD TO SUPABASE ---
     print("\nStep 5: Uploading data to Supabase...")
-    # upload_dataframe_to_supabase(processed_data['companies'], 'companies')
-    # upload_dataframe_to_supabase(processed_data['contacts'], 'contacts')
+    upload_dataframe_to_supabase(processed_data['companies'], 'companies')
+    upload_dataframe_to_supabase(processed_data['contacts'], 'contacts')
     # upload_dataframe_to_supabase(processed_data['responses'], 'responses')
     # Upload the certifications catalog table from config/certifications_catalog_data.py
     # df_cert_catalog = pd.DataFrame(CERTIFICATIONS_CATALOG)

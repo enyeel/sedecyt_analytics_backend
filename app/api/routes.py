@@ -1,5 +1,5 @@
 from flask import jsonify, Blueprint
-from app.services.auth_decorator import token_required
+from app.api.auth_decorator import token_required
 
 
 api_bp = Blueprint("api", __name__)
@@ -16,7 +16,7 @@ def health_check():
 @api_bp.route("tabla/<string:table_name>", methods=["GET"])
 @token_required
 def get_table_data(table_name):                                 #el nombre de la tabla se pasa como parámetro en la URL después de /tabla/
-    from app.services.supabase_service import get_all_from
+    from app.core.connections.supabase_service import get_all_from
     
     print(f"Petición para obtener datos de la tabla: {table_name}")
 
@@ -30,7 +30,7 @@ def get_table_data(table_name):                                 #el nombre de la
 #endpoint de prueba para verificar conexión con supabase
 @api_bp.route("tabla-no-auth/<string:tabla>", methods=["GET"])
 def get_table(tabla):                                 #el nombre de la tabla se pasa como parámetro en la URL después de /tabla/
-    from app.services.supabase_service import get_all_from
+    from app.core.connections.supabase_service import get_all_from
     
     print(f"Petición para obtener datos de la tabla: {tabla}")
 
@@ -46,7 +46,7 @@ def get_table(tabla):                                 #el nombre de la tabla se 
 @api_bp.route("/sheets", methods=['GET'])
 #@token_required
 def get_contactos_from_sheet():
-    from ..services import google_sheets_service
+    from app.core.connections import google_sheets_service
 
     print("Petición para obtener datos de Google Sheets")
 
@@ -64,11 +64,9 @@ def get_all_dashboards():
     """
     Endpoint to get the list of all available dashboards, with dynamic data.
     """
-    #from data.inputs.mock_dashboards import MOCK_DASHBOARDS
-    from data.inputs import dashboard_service
+    from app.services import dashboard_service
     print("Petición para obtener todos los dashboards")
     all_dashboards = dashboard_service.get_dashboards_with_data()
-    #all_dashboards = MOCK_DASHBOARDS
     return jsonify(all_dashboards), 200
     
     
