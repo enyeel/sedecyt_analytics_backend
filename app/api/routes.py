@@ -62,19 +62,29 @@ def get_contactos_from_sheet():
 @token_required
 def get_all_dashboards():
     """
-    Endpoint to get the list of all available dashboards, with dynamic data.
+    Endpoint to get a lightweight list of all available dashboards.
     """
     from app.services import dashboard_service
-    print("Petición para obtener todos los dashboards")
+    print("Petición para obtener la lista de dashboards")
+    dashboards_list = dashboard_service.get_all_dashboards_list()
+    return jsonify(dashboards_list), 200
+    
+    
+@api_bp.route("/dashboards/<string:dashboard_slug>", methods=['GET'])
+@token_required
+def get_single_dashboard(dashboard_slug):
+    """
+    Endpoint to get the full data (including charts) for a single dashboard.
+    """
+    from app.services import dashboard_service
+    print(f"Petición para obtener el dashboard con slug: {dashboard_slug}")
+
+    # We can reuse the existing function, but filter it for the one we want.
     all_dashboards = dashboard_service.get_dashboards_with_data()
-    return jsonify(all_dashboards), 200
     
-    
-# @api_bp.route("/get-dashboard/<string:dashboard-id>", methods=['GET'])
-# @token_required
-# def get_dashboard(dashboard_id):
-#     from data.inputs.mock_dashboards import MOCK_DASHBOARDS
-#     
-#     print(f"Petición para obtener el dashboard con ID: {dashboard_id}")
-#     
-#     return 0
+    target_dashboard = next((d for d in all_dashboards if d.get('slug') == dashboard_slug), None)
+
+    if not target_dashboard:
+        return jsonify({"error": "Dashboard not found"}), 404
+        
+    return jsonify(target_dashboard), 200

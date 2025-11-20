@@ -1,5 +1,18 @@
 from app.core.connections import supabase_service
 
+def get_all_dashboards_list():
+    """
+    Fetches a lightweight list of all dashboards from Supabase, without chart data.
+    """
+    try:
+        # Fetch all dashboards, ordered by position, but exclude the chart data
+        dashboards_response = supabase_service.supabase.table('dashboards').select('id, slug, title, description, position').order('position').execute()
+        return dashboards_response.data
+    except Exception as e:
+        print(f"❌ Error fetching dashboard list from Supabase: {e}")
+        return []
+
+
 def get_dashboards_with_data():
     """
     Fetches all dashboards and their pre-calculated charts from Supabase.
