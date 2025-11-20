@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, request
 from app.api.auth_decorator import token_required
 
 
@@ -88,5 +88,29 @@ def get_single_dashboard(dashboard_slug):
     if not target_dashboard:
         return jsonify({"error": "Dashboard not found"}), 404
         
+    print("--- DEBUG: SENDING THIS JSON TO FRONTEND ---")
+    print(target_dashboard)
+
     # 3. Return the single, complete dashboard object.
     return jsonify(target_dashboard), 200
+
+@api_bp.route("/companies/search", methods=['GET'])
+@token_required
+def search_company():
+    """
+    Searches for a single company by its trade name.
+    Expects a query parameter: /api/companies/search?q=MyCompany
+    """
+    from app.core.connections.supabase_service import supabase
+    
+    query = request.args.get('q')
+    if not query:
+        return jsonify({"error": "Query parameter 'q' is required"}), 400
+
+    try:
+        # Use 'ilike' for a case-insensitive search
+        response = supabase.table('companies').select('*').ilike('trade_name', f'%{query}%').limit(1).single().execute()
+        return jsonify(response.data), 200
+    except Exception as e:
+        # Supabase client raises an exception if no rows are found with .single()
+        return jsonify({"error": "Company not found"}), 404
