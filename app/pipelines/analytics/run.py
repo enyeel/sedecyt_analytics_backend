@@ -87,7 +87,7 @@ def run_analytics_etl():
                     "chart_slug": chart_config["slug"],
                     "title": chart_object["title"],
                     "chart_type": chart_object["type"],
-                    "chart_data": json.dumps(chart_object["data"]), # Ensure data is a JSON string
+                    "chart_data": chart_object["data"], # Pass the dictionary directly
                     "position": i + 1
                 }
                 all_charts_to_upload.append(chart_to_upload)
