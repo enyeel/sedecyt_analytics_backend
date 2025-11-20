@@ -79,12 +79,14 @@ def get_single_dashboard(dashboard_slug):
     from app.services import dashboard_service
     print(f"Petición para obtener el dashboard con slug: {dashboard_slug}")
 
-    # We can reuse the existing function, but filter it for the one we want.
+    # 1. Get the list of ALL dashboards, fully assembled with their charts.
     all_dashboards = dashboard_service.get_dashboards_with_data()
     
+    # 2. Find the specific dashboard the user requested from that complete list.
     target_dashboard = next((d for d in all_dashboards if d.get('slug') == dashboard_slug), None)
 
     if not target_dashboard:
         return jsonify({"error": "Dashboard not found"}), 404
         
+    # 3. Return the single, complete dashboard object.
     return jsonify(target_dashboard), 200
