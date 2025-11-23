@@ -67,7 +67,20 @@ def get_all_dashboards():
     from app.services import dashboard_service
     print("Petición para obtener la lista de dashboards")
     dashboards_list = dashboard_service.get_all_dashboards_list()
-    return jsonify(dashboards_list), 200
+    
+    response = jsonify(dashboards_list)
+    # HEADERS:
+    # public vs private:
+    # 'private': Solo el navegador del usuario final puede guardar esto. (Correcto para datos con login)
+    # 'public': Un servidor intermedio (CDN) podría guardarlo para todos. (Peligroso para datos de sesión)
+    
+    # max-age=300:
+    # "Esta información es fresca por 300 segundos (5 minutos)".
+    # Si SWR pregunta de nuevo a los 2 min, el navegador le da esto sin tocar tu servidor Flask.
+    
+    response.headers['Cache-Control'] = 'private, max-age=300'
+    
+    return response, 200
     
     
 @api_bp.route("/dashboards/<string:dashboard_slug>", methods=['GET'])
