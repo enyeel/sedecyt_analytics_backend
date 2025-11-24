@@ -17,6 +17,15 @@ def no_cleaning(text: Union[str, float]) -> Union[str, float]:
     """
     return text
 
+def clean_enum_nulls(text: Union[str, float]) -> Union[str, None]:
+    """
+    Si el valor es vacío '', retorna None para que Postgres lo tome como NULL.
+    Si tiene valor, lo devuelve limpio.
+    """
+    if pd.isna(text) or str(text).strip() == '':
+        return None
+    return str(text).strip()
+
 def clean_rfc(text: Union[str, float]) -> str:
     """
     Limpia y valida RFC mexicano (12 o 13 caracteres) o retiene IDs extranjeros.
@@ -43,6 +52,19 @@ def clean_rfc(text: Union[str, float]) -> str:
         
     # 4. Fallo: el texto no es RFC mexicano ni ID numérico típico
     return f'ID_FALLO_{cleaned[:15]}'
+
+def clean_industrial_park(text):
+    if pd.isna(text) or str(text).strip() == '':
+        return 'SIN PARQUE'
+    
+    # Normalizar a mayúsculas y quitar espacios
+    cleaned = str(text).upper().strip()
+    
+    # Lista negra de valores que significan "Nada"
+    if cleaned in ['NO', 'N/A', 'NA', 'NINGUNO', '0', '-']:
+        return 'SIN PARQUE'
+        
+    return cleaned
 
 def clean_email(text: Union[str, float]) -> str:
     """

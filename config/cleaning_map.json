@@ -88,7 +88,7 @@
         "Proveeduría ": {
             "target_db_col": "procurement_tier",
             "target_table": "companies",
-            "clean_func": "no_cleaning"
+            "clean_func": "clean_enum_nulls"
         },
         "Conversion Date": {
             "target_db_col": "response_date",
@@ -121,7 +121,6 @@
         "Contact first name",
         "Contact last name",
         "Contact email",
-        "Contact ID",
-        "Apellidos"
+        "Contact ID"
     ]
 }
