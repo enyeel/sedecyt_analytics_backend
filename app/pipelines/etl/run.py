@@ -2,135 +2,203 @@ from dotenv import load_dotenv
 import json
 import os
 import pandas as pd
+import numpy as np 
+from thefuzz import process, fuzz
 
-# Import the new modularized services
+# Import services
 from app.core.connections.google_sheets_service import read_worksheet_as_dataframe
 from app.pipelines.etl.processing import clean_and_process_data
 from app.pipelines.etl.certifications import analyze_other_certifications
 from app.core.connections import supabase_service
-from app.core.connections.supabase_service import upload_dataframe_to_supabase 
 from config.certifications_catalog_data import CERTIFICATIONS_CATALOG
 
-output_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data','outputs')
-os.makedirs(output_dir, exist_ok=True)
-
 def load_config(file_path='config/cleaning_map.json'):
-    """Loads and returns the configuration dictionary from a JSON file."""
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
     
 def get_id_map(table_name, key_column):
-    """
-    Helper para traer IDs de Supabase.
-    Retorna un dict: { 'RFC_VALOR': 123, ... }
-    """
     print(f"Fetching ID map for table '{table_name}'...")
     try:
-        # Seleccionamos solo ID y la columna llave para ser eficientes
         response = supabase_service.supabase.table(table_name).select(f"id, {key_column}").execute()
         data = response.data
         return {row[key_column]: row['id'] for row in data}
     except Exception as e:
         print(f"Error fetching map for {table_name}: {e}")
         return {}
+    
+def find_cert_id(text, catalog_df):
+    """Busca el ID de una certificación dado un texto."""
+    if not text or text in ['OTRAS', 'NULL', '']: return None
+    text_upper = str(text).upper().strip()
+    
+    # 1. Match directo (Acrónimo o Nombre)
+    match = catalog_df[
+        (catalog_df['acronym'] == text_upper) | 
+        (catalog_df['name'].str.upper() == text_upper)
+    ]
+    if not match.empty:
+        return int(match.iloc[0]['id'])
+    
+    # 2. Match por Keywords
+    for _, row in catalog_df.iterrows():
+        keywords = [k.upper() for k in row['search_keywords']]
+        if text_upper in keywords:
+            return int(row['id'])
+            
+    return None
+
+def convert_checkboxes_to_ids(cert_string, db_cert_catalog):
+    """Convierte lista de strings de checkboxes a lista de IDs."""
+    if not isinstance(cert_string, list): return []
+    ids = set()
+    for cert_text in cert_string:
+        found_id = find_cert_id(cert_text, db_cert_catalog)
+        if found_id:
+            ids.add(found_id)
+    return list(ids)
 
 def run_etl_process():
     print("--- Inicio del ETL SEDECyT Analytics ---")
 
-    # 1. Cargar Catálogo de Certificaciones (Primero, para tener IDs)
-    # -------------------------------------------------------------
+    # ---------------------------------------------------------
+    # Step 0: Catálogos
+    # ---------------------------------------------------------
     print("\nStep 0: Syncing Certifications Catalog...")
-    # Subimos el catálogo estático que tienes en el código
     df_catalog = pd.DataFrame(CERTIFICATIONS_CATALOG)
-    # Upsert basado en 'acronym' para no duplicar
-    upload_dataframe_to_supabase(df_catalog, 'certifications_catalog') 
+    supabase_service.upload_dataframe_to_supabase(df_catalog, 'certifications_catalog', on_conflict_col='name')
     
-    # Traemos el catálogo fresco con sus IDs de BD
-    db_cert_catalog = supabase_service.get_all_from('certifications_catalog')
+    # Descargar catálogo con IDs reales
+    db_cert_catalog = pd.DataFrame(supabase_service.get_all_from('certifications_catalog'))
     
-    # 2. Extracción y Limpieza Básica
-    # -------------------------------------------------------------
+    # ---------------------------------------------------------
+    # Step 1 & 2: Extracción y Limpieza Base
+    # ---------------------------------------------------------
     print("\nStep 1 & 2: Extract and Transform...")
     df_raw = read_worksheet_as_dataframe("Formulario Desarrollo Industria")
-    config = json.load(open('config/cleaning_map.json', 'r', encoding='utf-8'))
-    
-    # Esto nos da los DFs limpios pero SIN IDs relacionales aún
+    config = load_config()
     processed_data = clean_and_process_data(df_raw, config) 
     
-    # 3. Subir Tablas Maestras (Companies y Contacts)
-    # -------------------------------------------------------------
-    # Catalogos: Usamos on_conflict para que si existe el nombre/rfc, solo actualice (o ignore) y no falle.
+    # Asegurar fechas correctas
+    processed_data['responses']['response_date'] = pd.to_datetime(processed_data['responses']['response_date'])
 
-    # Para companies, la llave única es 'clean_rfc'
-    upload_dataframe_to_supabase(processed_data['companies'], 'companies', on_conflict_col='clean_rfc')
+    # ---------------------------------------------------------
+    # Step 2.5: Procesamiento de Certificaciones (HISTORIAL COMPLETO)
+    # ---------------------------------------------------------
+    print("\nStep 2.5: Processing Certifications (Full History)...")
     
-    # Para contacts, la llave única es 'clean_email'
-    upload_dataframe_to_supabase(processed_data['contacts'], 'contacts', on_conflict_col='clean_email')
+    # A) IDs de Texto Libre (Para todas las filas)
+    # analyze_other_certifications devuelve un DF con 'other_certifications_ids'
+    df_cert_analysis_full = analyze_other_certifications(
+        processed_data['responses'], 
+        db_cert_catalog.to_dict('records')
+    )
     
-    # Para certifications_catalog (si lo subes), la llave es 'name'
-    # upload_dataframe_to_supabase(df_cert_catalog, 'certifications_catalog', on_conflict_col='name')
-    
-    # 4. Recuperar los IDs generados (El truco de magia)
-    # -------------------------------------------------------------
-    print("\nStep 4: Fetching generated Foreign Keys...")
-    company_map = get_id_map('companies', 'clean_rfc')
-    contact_map = get_id_map('contacts', 'clean_email')
-
-    # 5. Preparar Tabla de Responses (Unión de FKs y Certs)
-    # -------------------------------------------------------------
-    print("\nStep 5: Assembling Responses Table...")
-    df_responses = processed_data['responses'].copy()
-
-    # A) Mapear Foreign Keys
-    # Usamos .map para traducir clean_rfc -> id
-    df_responses['company_id'] = df_responses['clean_rfc'].map(company_map)
-    df_responses['contact_id'] = df_responses['clean_email'].map(contact_map)
-
-    # B) Validación rápida: Descartar filas huérfanas si falló el join
-    missing_companies = df_responses['company_id'].isna().sum()
-    if missing_companies > 0:
-        print(f"⚠️ Warning: {missing_companies} responses could not be linked to a company.")
-        df_responses = df_responses.dropna(subset=['company_id'])
-
-    # C) Análisis de Certificaciones (Obtener IDs)
-    # Pasamos el catálogo de BD para que busque los IDs reales
-    df_cert_analysis = analyze_other_certifications(df_responses, db_cert_catalog)
-    
-    # Pegar el resultado (lista de IDs) al dataframe principal
-    # Asumiendo que el orden se mantiene o haciendo un merge por clean_rfc
-    # Para seguridad, hagamos merge:
-    df_responses = df_responses.merge(
-        df_cert_analysis[['clean_rfc', 'other_certifications_ids']], 
-        on='clean_rfc', 
+    # Pegamos esos IDs al dataframe principal de respuestas
+    processed_data['responses'] = processed_data['responses'].merge(
+        df_cert_analysis_full[['clean_rfc', 'response_date', 'other_certifications_ids']], 
+        on=['clean_rfc', 'response_date'], 
         how='left'
     )
 
-    # Renombrar la columna para que coincida con Supabase (other_certifications es jsonb)
-    df_responses.rename(columns={'other_certifications_ids': 'other_certifications'}, inplace=True)
-
-    # Asegurarse de que sea una lista válida para JSONB (reemplazar NaN con [])
-    df_responses['other_certifications'] = df_responses['other_certifications'].apply(
-        lambda x: x if isinstance(x, list) else []
+    # B) IDs de Checkboxes (Para todas las filas)
+    # Nota: Usamos iso_certifications que viene limpio en 'companies' o 'responses'
+    # Si iso_certifications está en companies (por tu cleaning map), necesitamos traerlo a responses
+    # Asumiremos que tu cleaning map lo pone en companies, así que lo mapeamos por RFC temporalmente
+    # o mejor, si el raw tenía esa columna, debió procesarse. 
+    
+    # *FIX RÁPIDO:* Recalculamos 'iso_certifications' desde el RAW para asegurar que esté en responses fila x fila
+    # O usamos el que ya tienes en companies si es 1 a 1. 
+    # Para ser precisos con el historial, vamos a procesar la columna 'iso_certifications' si existe en responses.
+    # Si no existe en responses (porque el map lo mandó a companies), usamos un truco:
+    
+    if 'iso_certifications' not in processed_data['responses'].columns:
+        # Traemos la columna raw original y la limpiamos aquí rápido para tener el histórico
+        # Ojo: Esto asume que la columna se llama "Certificaciones ISO " en el excel
+        col_name = "Certificaciones ISO " 
+        if col_name in df_raw.columns:
+            from app.pipelines.etl.cleaning import clean_certifications_to_array
+            processed_data['responses']['iso_certifications'] = df_raw[col_name].apply(clean_certifications_to_array)
+    
+    # Ahora sí convertimos a IDs
+    processed_data['responses']['iso_certification_ids'] = processed_data['responses']['iso_certifications'].apply(
+        lambda x: convert_checkboxes_to_ids(x, db_cert_catalog)
     )
 
-    # 6. Subir Responses
-    # -------------------------------------------------------------
-    print("\nStep 6: Uploading Responses...")
+    # ---------------------------------------------------------
+    # Step 3: Upload Master Tables (LATEST SNAPSHOT)
+    # ---------------------------------------------------------
+    print("\nStep 3: Uploading Master Tables (Latest Snapshot)...")
     
-    # Seleccionar solo las columnas que existen en la tabla de Supabase
-    # clean_rfc y clean_email ya no se necesitan, usamos los IDs
+    # 1. Ordenar por fecha y tomar la última respuesta por empresa
+    df_latest_snapshot = processed_data['responses'].sort_values('response_date', ascending=False).drop_duplicates(subset=['clean_rfc'], keep='first')
+    
+    # 2. Preparar el DF de Companies
+    # Tomamos la base limpia de companies
+    df_companies = processed_data['companies'].copy()
+    
+    # 3. Traer los IDs de certificaciones DEL SNAPSHOT
+    # Hacemos merge con el snapshot que ya tiene los IDs calculados (Paso 2.5)
+    df_companies = df_companies.merge(
+        df_latest_snapshot[['clean_rfc', 'iso_certification_ids', 'other_certifications_ids']],
+        on='clean_rfc',
+        how='left'
+    )
+    
+    # 4. Crear la columna MAESTRA (Unión de ambos)
+    def merge_cert_lists(row):
+        ids_checkbox = row['iso_certification_ids'] if isinstance(row['iso_certification_ids'], list) else []
+        ids_text = row['other_certifications_ids'] if isinstance(row['other_certifications_ids'], list) else []
+        return list(set(ids_checkbox + ids_text))
+
+    df_companies['certification_ids'] = df_companies.apply(merge_cert_lists, axis=1)
+    
+    # Subir Companies
+    # Excluimos columnas temporales para no ensuciar, pero mandamos certification_ids
+    cols_companies = [c for c in df_companies.columns if c not in ['iso_certification_ids', 'other_certifications_ids']]
+    supabase_service.upload_dataframe_to_supabase(df_companies[cols_companies], 'companies', on_conflict_col='clean_rfc')
+    
+    # Subir Contacts
+    supabase_service.upload_dataframe_to_supabase(processed_data['contacts'], 'contacts', on_conflict_col='clean_email')
+
+    # ---------------------------------------------------------
+    # Step 4: Foreign Keys
+    # ---------------------------------------------------------
+    print("\nStep 4: Fetching Foreign Keys...")
+    company_map = get_id_map('companies', 'clean_rfc')
+    contact_map = get_id_map('contacts', 'clean_email')
+
+    # ---------------------------------------------------------
+    # Step 5 & 6: Upload Responses (History)
+    # ---------------------------------------------------------
+    print("\nStep 5 & 6: Uploading Responses (History)...")
+    df_responses = processed_data['responses'].copy()
+    
+    # Map FKs
+    df_responses['company_id'] = df_responses['clean_rfc'].map(company_map)
+    df_responses['contact_id'] = df_responses['clean_email'].map(contact_map)
+    
+    # Renombrar para coincidir con BD
+    df_responses.rename(columns={'other_certifications_ids': 'other_certifications'}, inplace=True)
+    
+    # Limpieza final de nulos en listas
+    for col in ['other_certifications', 'iso_certification_ids']:
+        df_responses[col] = df_responses[col].apply(lambda x: x if isinstance(x, list) else [])
+
+    # Filtrar y Subir
     cols_to_upload = [
         'company_id', 'contact_id', 'response_date', 
         'has_expansion_plans', 'has_engineering_area', 
-        'additional_data', 'other_certifications' # 'iso_certification_ids' si lo tienes
+        'additional_data', 'other_certifications', 'iso_certification_ids'
     ]
-    
-    # Filtrar columnas que realmente tenemos en el DF
+    # Validar que las columnas existan
     final_cols = [c for c in cols_to_upload if c in df_responses.columns]
     
-    upload_dataframe_to_supabase(df_responses[final_cols], 'responses')
+    # Validar FKs
+    df_responses = df_responses.dropna(subset=['company_id'])
+    
+    supabase_service.upload_dataframe_to_supabase(df_responses[final_cols], 'responses')
 
-    print("\n✅ ETL Completo: Tabla responses cargada correctamente.")
+    print("\n✅ ETL Completo: Snapshot maestro y Historial de respuestas sincronizados.")
 
 if __name__ == '__main__':
     load_dotenv()

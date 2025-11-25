@@ -487,3 +487,63 @@ def extract_certifications_acronyms(text: str) -> List[str]:
                 text_upper = re.sub(pattern, '', text_upper, count=1)
                 
     return sorted(list(found_acronyms))
+
+# --- FUNCIONES DE NORMALIZACIÓN DE MUNICIPIOS (Nivel 3) ---
+
+MUNICIPALITY_EXCEPTIONS = {
+    "SAN FCO. DE LOS ROMO": "SAN FRANCISCO DE LOS ROMO",
+    "SAN FCO DE LOS ROMO": "SAN FRANCISCO DE LOS ROMO",
+    "ESTADO DE MEXICO": None,       # Lo marcamos como vacío porque NO es un municipio
+    "EDO DE MEX": None,
+    "CDMX": "CIUDAD DE MEXICO",     # Si aplica
+    "AGS": "AGUASCALIENTES",
+    "AGUASCALIENTES AGS": "AGUASCALIENTES",
+    "LEÓN": "LEON"
+}
+
+STATE_NOISE = [
+    ' AGUASCALIENTES', # Incluir el espacio inicial es clave
+    'AGUASCALIENTES',  # Sin espacio por si está al inicio
+    ' GTO',
+    ' EDO MEX',
+    ' ESTADO DE MEXICO',
+    ' PORTUGAL',
+    'PORTUGAL',
+    ' LEIRIA',
+    ' JAL',
+    ' CDMX'
+]
+
+def standardize_municipality(dirty_name):
+    if not dirty_name or pd.isna(dirty_name):
+        return None
+
+    # 1. ESTANDARIZACIÓN Y LIMPIEZA DE PUNTUACIÓN
+    dirty_name = str(dirty_name).upper().strip()
+    dirty_name = dirty_name.replace('.', '').replace(',', '').replace('/', '')
+
+    if dirty_name in clean_municipios:
+        return dirty_name
+
+    # 2. LIMPIEZA DE RUIDO DE ESTADO
+    for noise in STATE_NOISE:   # evaluar vs states (???)
+        dirty_name = dirty_name.replace(noise, '').strip()
+
+
+    if not dirty_name:
+        return None
+
+    # 3. REVISIÓN MANUAL RÁPIDA (DICTADO)
+    if dirty_name in MUNICIPALITY_EXCEPTIONS:
+        return MUNICIPALITY_EXCEPTIONS[dirty_name]
+
+    # 4. FUZZY MATCHING
+    best_match, score = process.extractOne(dirty_name, clean_municipios, scorer=fuzz.token_sort_ratio)
+
+    print(f"best match para {dirty_name} = {best_match} -> score: {score}")
+
+    # 5. APLICAR REGLA DE CONFIANZA
+    if score >= 86:
+        return best_match
+    else:
+        return dirty_name
