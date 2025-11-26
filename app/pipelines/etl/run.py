@@ -196,7 +196,7 @@ def run_etl_process():
     # Validar FKs
     df_responses = df_responses.dropna(subset=['company_id'])
     
-    supabase_service.upload_dataframe_to_supabase(df_responses[final_cols], 'responses')
+    supabase_service.upload_dataframe_to_supabase(df_responses[final_cols], 'responses', on_conflict_col='company_id, response_date')
 
     print("\n✅ ETL Completo: Snapshot maestro y Historial de respuestas sincronizados.")
 

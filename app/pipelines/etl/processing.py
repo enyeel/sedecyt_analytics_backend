@@ -1,5 +1,30 @@
 import pandas as pd
 from app.pipelines.etl import cleaning as cleaner
+from app.pipelines.etl.cleaning import clean_municipality_to_id, rescue_names
+
+def _link_municipalities_to_catalog(df_clean: pd.DataFrame) -> pd.DataFrame:
+    """
+    Lógica Híbrida:
+    1. Intenta obtener ID desde 'other_municipality'.
+    2. Si tiene ID -> Lo guarda en 'municipality_id' y BORRA 'other_municipality'.
+    3. Si NO tiene ID -> Deja 'municipality_id' vacío y CONSERVA 'other_municipality'.
+    """
+    if 'other_municipality' not in df_clean.columns:
+        return df_clean
+
+    print("Linking municipalities to catalog IDs...")
+    
+    # Generar columna de IDs aplicando la función inteligente
+    df_clean['municipality_id'] = df_clean['other_municipality'].apply(clean_municipality_to_id)
+    
+    df_clean['municipality_id'] = df_clean['municipality_id'].astype('Int64')
+    
+    # Limpieza de redundancia:
+    # Donde SÍ encontramos ID (notna), borramos el texto para no duplicar.
+    mask_success = df_clean['municipality_id'].notna()
+    df_clean.loc[mask_success, 'other_municipality'] = None
+    
+    return df_clean
 
 def clean_and_process_data(df: pd.DataFrame, config: dict) -> dict:
     """
@@ -18,6 +43,9 @@ def clean_and_process_data(df: pd.DataFrame, config: dict) -> dict:
     # 2. Post-Processing: Apply complex logic that depends on multiple columns.
     df_clean = _finalize_company_ids(df_clean)
     df_clean = _rescue_contact_names(df_clean)
+    
+    # --- NUEVA LÍNEA ---
+    df_clean = _link_municipalities_to_catalog(df_clean)
     
     # 3. JSONB Creation: Consolidate extra data into a single JSONB column.
     df_clean = _create_jsonb_column(df, df_clean, config)
@@ -89,6 +117,8 @@ def _structure_data_into_tables(df_clean: pd.DataFrame, config: dict) -> dict:
     
     # Companies table (unique by clean_rfc)
     company_cols = [p['target_db_col'] for p in config['cleaning_map'].values() if p['target_table'] == 'companies']
+    if 'municipality_id' in df_clean.columns:
+        company_cols.append('municipality_id')
     df_companies = df_clean[['clean_rfc'] + [col for col in company_cols if col != 'clean_rfc']].drop_duplicates(subset=['clean_rfc'])
     
     # Contacts table (unique by clean_email)

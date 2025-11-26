@@ -1,7 +1,12 @@
 import re
 import pandas as pd
 from typing import Union, List, Dict
+from rapidfuzz import process, fuzz 
+from app.core.connections.supabase_service import get_municipalities_map
 
+# --- VARIABLES GLOBALES (CACHÉ) ---
+# Esta variable guardará el catálogo en memoria para no llamar a la BD mil veces
+CACHED_MUNICIPALITIES = None
 # Patrón para identificar caracteres no alfanuméricos que queremos eliminar (como guiones, espacios, etc.)
 ALPHANUM_PATTERN = re.compile(r'[^a-zA-Z0-9]') 
 # Patrón para eliminar sufijos legales
@@ -490,60 +495,84 @@ def extract_certifications_acronyms(text: str) -> List[str]:
 
 # --- FUNCIONES DE NORMALIZACIÓN DE MUNICIPIOS (Nivel 3) ---
 
-MUNICIPALITY_EXCEPTIONS = {
-    "SAN FCO. DE LOS ROMO": "SAN FRANCISCO DE LOS ROMO",
-    "SAN FCO DE LOS ROMO": "SAN FRANCISCO DE LOS ROMO",
-    "ESTADO DE MEXICO": None,       # Lo marcamos como vacío porque NO es un municipio
-    "EDO DE MEX": None,
-    "CDMX": "CIUDAD DE MEXICO",     # Si aplica
-    "AGS": "AGUASCALIENTES",
-    "AGUASCALIENTES AGS": "AGUASCALIENTES",
-    "LEÓN": "LEON"
-}
-
+# --- CONSTANTES DE RUIDO ---
 STATE_NOISE = [
-    ' AGUASCALIENTES', # Incluir el espacio inicial es clave
-    'AGUASCALIENTES',  # Sin espacio por si está al inicio
-    ' GTO',
-    ' EDO MEX',
-    ' ESTADO DE MEXICO',
-    ' PORTUGAL',
-    'PORTUGAL',
-    ' LEIRIA',
-    ' JAL',
-    ' CDMX'
+    ' AGUASCALIENTES', 'AGUASCALIENTES', ' AGS', 
+    ' GTO', ' GUANAJUATO',
+    ' EDO MEX', ' ESTADO DE MEXICO', ' MEXICO',
+    ' JAL', ' JALISCO',
+    ' ZAC', ' ZACATECAS',
+    ' CDMX', ' CIUDAD DE MEXICO'
 ]
 
-def standardize_municipality(dirty_name):
-    if not dirty_name or pd.isna(dirty_name):
+ACCENT_MAP = str.maketrans("ÁÉÍÓÚÜÑ", "AEIOUUN")
+
+CACHED_MUNICIPALITIES_MAP = None
+
+def _get_municipality_map_reference():
+    global CACHED_MUNICIPALITIES_MAP
+    if CACHED_MUNICIPALITIES_MAP is None:
+        print("⏳ Cargando mapa de IDs de municipios...")
+        CACHED_MUNICIPALITIES_MAP = get_municipalities_map()
+    return CACHED_MUNICIPALITIES_MAP
+
+def clean_municipality_to_id(text: Union[str, float]) -> Union[int, None]:
+    """
+    Convierte texto a ID de municipio. 
+    Maneja acentos, excepciones manuales y errores de dedo.
+    """
+    if pd.isna(text) or str(text).strip() == '':
         return None
 
-    # 1. ESTANDARIZACIÓN Y LIMPIEZA DE PUNTUACIÓN
-    dirty_name = str(dirty_name).upper().strip()
+    # LIMPIEZA SUPREMA
+    text_obj = str(text).upper().translate(ACCENT_MAP)
+    dirty_name = " ".join(text_obj.split()) # <--- ESTO MATA ESPACIOS RAROS
     dirty_name = dirty_name.replace('.', '').replace(',', '').replace('/', '')
 
-    if dirty_name in clean_municipios:
-        return dirty_name
+    # Cargar el mapa de referencia { "NOMBRE": ID }
+    mun_map = _get_municipality_map_reference()
+    
+    # Variable para el nombre final que buscaremos en el mapa
+    target_name = dirty_name
 
-    # 2. LIMPIEZA DE RUIDO DE ESTADO
-    for noise in STATE_NOISE:   # evaluar vs states (???)
-        dirty_name = dirty_name.replace(noise, '').strip()
+    # 3. LIMPIEZA DE RUIDO DE ESTADO
+    # Solo si no fue una excepción directa
+    clean_try = target_name
+    for noise in STATE_NOISE:
+        if noise in clean_try:
+            clean_try = clean_try.replace(noise, '').strip()
+    
+    # --- CORRECCIÓN AQUÍ ---
+    # Antes tenías: if not clean_try and ...
+    # Ahora usamos: len(clean_try) < 4
+    
+    # Lógica: Si después de limpiar quedó vacío O quedó algo muy corto (ej: "AGS")
+    # Y la palabra original contenía "AGUASCALIENTES", asumimos que es la capital.
+    if (len(clean_try) < 4) and "AGUASCALIENTES" in dirty_name:
+        clean_try = "AGUASCALIENTES"
+    
+    # Actualizamos el target_name con la versión sin ruido
+    target_name = clean_try if clean_try else target_name
 
+    # 4. BUSQUEDA EXACTA (Prioridad 1)
+    if target_name in mun_map:
+        return mun_map[target_name]
 
-    if not dirty_name:
-        return None
+    # 5. FUZZY MATCHING (El último recurso)
+    valid_names = list(mun_map.keys())
+    
+    # Usamos token_sort_ratio para "AGUASCALIENTES, MUNICIPIO DE" vs "MUNICIPIO DE AGUASCALIENTES"
+    result = process.extractOne(target_name, valid_names, scorer=fuzz.token_sort_ratio)
+    
+    if result:
+        best_match_name, score, _ = result
+        
+        # Debug para ver qué está pasando (opcional)
+        # if score > 80 and score < 90:
+        #     print(f"⚠️ Casi match: '{target_name}' vs '{best_match_name}' ({score})")
 
-    # 3. REVISIÓN MANUAL RÁPIDA (DICTADO)
-    if dirty_name in MUNICIPALITY_EXCEPTIONS:
-        return MUNICIPALITY_EXCEPTIONS[dirty_name]
+        if score >= 90:
+            return mun_map[best_match_name]
 
-    # 4. FUZZY MATCHING
-    best_match, score = process.extractOne(dirty_name, clean_municipios, scorer=fuzz.token_sort_ratio)
-
-    print(f"best match para {dirty_name} = {best_match} -> score: {score}")
-
-    # 5. APLICAR REGLA DE CONFIANZA
-    if score >= 86:
-        return best_match
-    else:
-        return dirty_name
+    # 6. NO SE ENCONTRÓ (Extranjero / Outlier)
+    return None

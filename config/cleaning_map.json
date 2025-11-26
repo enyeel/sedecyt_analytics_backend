@@ -66,9 +66,9 @@
             "clean_func": "clean_string"
         },
         "Municipio": {
-            "target_db_col": "municipality",
+            "target_db_col": "other_municipality",
             "target_table": "companies",
-            "clean_func": "clean_string_upper"
+            "clean_func": "clean_string_upper" 
         },
         "Código postal": {
             "target_db_col": "postal_code",

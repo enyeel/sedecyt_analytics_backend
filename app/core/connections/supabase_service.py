@@ -45,9 +45,52 @@ def _clean_value(v):
     elif pd.isna(v):
         return None
     
-    # 6. Todo lo demás (str, int nativo, bool) se queda igual
+    # 6. Si es un float nativo de Python
+    if isinstance(v, (int, np.integer)):
+        return int(v)
+    
+    # 7. Si es un float nativo de Python
+    if isinstance(v, (float, np.float64)):
+        # Truco: si es 11.0, lo baja a 11. Si es 11.5, lo deja pasar (o falla en BD)
+        if v.is_integer():
+            return int(v)
+        return v
+    
+    # 8. Todo lo demás (str, int nativo, bool) se queda igual
     return v
 
+ACCENT_MAP = str.maketrans("ÁÉÍÓÚÜÑ", "AEIOUUN")
+
+def get_municipalities_map():
+    try:
+        # Traemos ID, Nombre y Keywords
+        response = supabase.table('municipality_catalog').select('id, municipality_name, keywords').execute()
+        
+        master_map = {}
+        if response.data:
+            for item in response.data:
+                mun_id = item['id']
+                
+                raw_name = str(item['municipality_name'])
+                # LIMPIEZA SUPREMA
+                clean_official = " ".join(raw_name.upper().translate(ACCENT_MAP).split()) 
+                clean_official = clean_official.replace('.', '').replace(',', '').replace('/', '')
+                master_map[clean_official] = mun_id
+                
+                # 2. Keywords -> ID (La magia)
+                keywords = item.get('keywords')
+                if keywords and isinstance(keywords, list):
+                    for kw in keywords:
+                        # Limpiamos el keyword igual que limpiamos el input
+                        clean_kw = " ".join(str(kw).upper().translate(ACCENT_MAP).split())
+                        clean_kw = clean_kw.replace('.', '').replace(',', '').replace('/', '')
+                        master_map[clean_kw] = mun_id
+                        
+        return master_map
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return {}
+    
 def upload_dataframe_to_supabase(df: pd.DataFrame, table_name: str, on_conflict_col: str = None):
     """
     Sube un DF a Supabase, limpiando recursivamente tipos NumPy y fechas.
@@ -56,7 +99,7 @@ def upload_dataframe_to_supabase(df: pd.DataFrame, table_name: str, on_conflict_
         print(f"❌ The DataFrame for {table_name} is empty. Nothing to upload.")
         return
 
-    # 1. Convertir Timestamps a string ISO (Pandas lo hace rápido en bloque)
+    # 1. Convertir Timestamps a string ISO
     df_formatted = df.copy()
     for col in df_formatted.select_dtypes(include=['datetime64[ns]', 'datetimetz']).columns:
         df_formatted[col] = df_formatted[col].dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -64,29 +107,29 @@ def upload_dataframe_to_supabase(df: pd.DataFrame, table_name: str, on_conflict_
     # 2. Convertir a lista de diccionarios
     records_to_upload = df_formatted.to_dict(orient='records')
 
-    # 3. Limpieza PROFUNDA usando la función auxiliar
+    # 3. Limpieza PROFUNDA
     final_records = []
     for record in records_to_upload:
-        # Aplicamos _clean_value a cada valor del diccionario
+        # IMPORTANTE: Asegúrate de tener importada o definida _clean_value
         clean_rec = {k: _clean_value(v) for k, v in record.items()}
         final_records.append(clean_rec)
 
     print(f"Preparing to upload {len(final_records)} records to '{table_name}'...")
 
     try:
-        # 4. Subida con Upsert
-        query = supabase.table(table_name).upsert(final_records)
-        
+        # 4. Subida con Upsert (CORREGIDO: Usamos final_records en ambos casos)
         if on_conflict_col:
+            # Si hay columna de conflicto, la usamos
             query = supabase.table(table_name).upsert(final_records, on_conflict=on_conflict_col)
+        else:
+            # Si no, upsert normal (por ID)
+            query = supabase.table(table_name).upsert(final_records)
         
         data, count = query.execute()
         print(f"✅ Successfully uploaded to '{table_name}'.")
 
     except Exception as e:
         print(f"❌ An error occurred during the upload to {table_name}: {e}")
-        # Debug avanzado: Imprimir el tipo de dato del primer elemento de una lista si falla
+        # Debug avanzado
         if final_records:
-            for k, v in final_records[0].items():
-                if isinstance(v, list) and len(v) > 0:
-                    print(f"   DEBUG: List column '{k}' contains types: {[type(x) for x in v]}")
+            print("   DEBUG: First record keys:", final_records[0].keys())
