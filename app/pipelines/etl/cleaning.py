@@ -534,7 +534,7 @@ def clean_municipality_to_id(text: Union[str, float]) -> Union[int, None]:
             # Volvemos a normalizar espacios tras el reemplazo.
             temp_clean = clean_try.replace(noise, '')
             clean_try = " ".join(temp_clean.split())
-    
+
     # Restaurar si borramos todo
     if (len(clean_try) < 4) and "AGUASCALIENTES" in dirty_name:
         clean_try = "AGUASCALIENTES"
@@ -547,12 +547,6 @@ def clean_municipality_to_id(text: Union[str, float]) -> Union[int, None]:
     # A. Match Exacto
     if target_name in mun_map:
         return mun_map[target_name]
-    
-    # --- DEBUG DE ULTIMO RECURSO ---
-    # Si falla "SAN FRANCISCO DE LOS ROMO", esto te dirá por qué
-    if "FRANCISCO" in target_name:
-        print(f"⚠️ FALLO EXACTO: '{target_name}'")
-    # -------------------------------
 
     # B. Fuzzy Match
     valid_names = list(mun_map.keys())
