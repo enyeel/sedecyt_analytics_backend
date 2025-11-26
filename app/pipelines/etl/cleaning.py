@@ -517,62 +517,50 @@ def _get_municipality_map_reference():
     return CACHED_MUNICIPALITIES_MAP
 
 def clean_municipality_to_id(text: Union[str, float]) -> Union[int, None]:
-    """
-    Convierte texto a ID de municipio. 
-    Maneja acentos, excepciones manuales y errores de dedo.
-    """
     if pd.isna(text) or str(text).strip() == '':
         return None
 
-    # LIMPIEZA SUPREMA
+    # 1. LIMPIEZA NUCLEAR (Debe ser idéntica a la del servicio)
     text_obj = str(text).upper().translate(ACCENT_MAP)
-    dirty_name = " ".join(text_obj.split()) # <--- ESTO MATA ESPACIOS RAROS
+    dirty_name = " ".join(text_obj.split())  # Mata espacios raros
     dirty_name = dirty_name.replace('.', '').replace(',', '').replace('/', '')
 
-    # Cargar el mapa de referencia { "NOMBRE": ID }
-    mun_map = _get_municipality_map_reference()
-    
-    # Variable para el nombre final que buscaremos en el mapa
-    target_name = dirty_name
-
-    # 3. LIMPIEZA DE RUIDO DE ESTADO
-    # Solo si no fue una excepción directa
-    clean_try = target_name
+    # 2. Quitar ruido de estado
+    clean_try = dirty_name
+    STATE_NOISE = [' AGUASCALIENTES', 'AGUASCALIENTES', ' AGS', ' EDO MEX']
     for noise in STATE_NOISE:
         if noise in clean_try:
-            clean_try = clean_try.replace(noise, '').strip()
+            # OJO: Al quitar ruido, pueden quedar espacios dobles de nuevo. 
+            # Volvemos a normalizar espacios tras el reemplazo.
+            temp_clean = clean_try.replace(noise, '')
+            clean_try = " ".join(temp_clean.split())
     
-    # --- CORRECCIÓN AQUÍ ---
-    # Antes tenías: if not clean_try and ...
-    # Ahora usamos: len(clean_try) < 4
-    
-    # Lógica: Si después de limpiar quedó vacío O quedó algo muy corto (ej: "AGS")
-    # Y la palabra original contenía "AGUASCALIENTES", asumimos que es la capital.
+    # Restaurar si borramos todo
     if (len(clean_try) < 4) and "AGUASCALIENTES" in dirty_name:
         clean_try = "AGUASCALIENTES"
     
-    # Actualizamos el target_name con la versión sin ruido
-    target_name = clean_try if clean_try else target_name
+    target_name = clean_try if clean_try else dirty_name
 
-    # 4. BUSQUEDA EXACTA (Prioridad 1)
+    # 3. BUSCAR EN EL MAPA
+    mun_map = _get_municipality_map_reference()
+    
+    # A. Match Exacto
     if target_name in mun_map:
         return mun_map[target_name]
-
-    # 5. FUZZY MATCHING (El último recurso)
-    valid_names = list(mun_map.keys())
     
-    # Usamos token_sort_ratio para "AGUASCALIENTES, MUNICIPIO DE" vs "MUNICIPIO DE AGUASCALIENTES"
+    # --- DEBUG DE ULTIMO RECURSO ---
+    # Si falla "SAN FRANCISCO DE LOS ROMO", esto te dirá por qué
+    if "FRANCISCO" in target_name:
+        print(f"⚠️ FALLO EXACTO: '{target_name}'")
+    # -------------------------------
+
+    # B. Fuzzy Match
+    valid_names = list(mun_map.keys())
     result = process.extractOne(target_name, valid_names, scorer=fuzz.token_sort_ratio)
     
     if result:
-        best_match_name, score, _ = result
-        
-        # Debug para ver qué está pasando (opcional)
-        # if score > 80 and score < 90:
-        #     print(f"⚠️ Casi match: '{target_name}' vs '{best_match_name}' ({score})")
-
+        best_match, score, _ = result
         if score >= 90:
-            return mun_map[best_match_name]
+            return mun_map[best_match]
 
-    # 6. NO SE ENCONTRÓ (Extranjero / Outlier)
     return None

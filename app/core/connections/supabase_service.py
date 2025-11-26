@@ -2,6 +2,7 @@ import os
 from supabase import create_client, Client
 import pandas as pd
 import numpy as np
+import unicodedata
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -61,36 +62,70 @@ def _clean_value(v):
 
 ACCENT_MAP = str.maketrans("ÁÉÍÓÚÜÑ", "AEIOUUN")
 
+def normalize_text(text):
+    """
+    Normalización estándar: Mayúsculas, sin acentos (NFKD), 
+    sin puntuación y con espacios simples.
+    """
+    if not text: return ""
+    text = str(text).upper()
+    text = unicodedata.normalize('NFKD', text)
+    text = text.encode('ASCII', 'ignore').decode('utf-8')
+    text = text.replace('.', '').replace(',', '').replace('/', '')
+    return " ".join(text.split())
+
 def get_municipalities_map():
+    """
+    Descarga el catálogo completo de municipios (paginado) y construye 
+    un mapa optimizado { 'NOMBRE LIMPIO': ID }.
+    """
     try:
-        # Traemos ID, Nombre y Keywords
-        response = supabase.table('municipality_catalog').select('id, municipality_name, keywords').execute()
+        print("📡 Descargando catálogo de municipios...")
         
         master_map = {}
-        if response.data:
-            for item in response.data:
+        current_batch = 0
+        batch_size = 1000
+        
+        while True:
+            # Paginación para evitar límites de Supabase
+            response = supabase.table('municipality_catalog')\
+                .select('id, municipality_name, keywords')\
+                .range(current_batch * batch_size, (current_batch + 1) * batch_size - 1)\
+                .execute()
+            
+            batch_data = response.data
+            if not batch_data:
+                break 
+                
+            for item in batch_data:
                 mun_id = item['id']
                 
-                raw_name = str(item['municipality_name'])
-                # LIMPIEZA SUPREMA
-                clean_official = " ".join(raw_name.upper().translate(ACCENT_MAP).split()) 
-                clean_official = clean_official.replace('.', '').replace(',', '').replace('/', '')
-                master_map[clean_official] = mun_id
-                
-                # 2. Keywords -> ID (La magia)
+                # 1. Mapear Nombre Oficial
+                clean_official = normalize_text(item['municipality_name'])
+                if clean_official:
+                    master_map[clean_official] = mun_id
+
+                # 2. Mapear Keywords
                 keywords = item.get('keywords')
                 if keywords and isinstance(keywords, list):
                     for kw in keywords:
-                        # Limpiamos el keyword igual que limpiamos el input
-                        clean_kw = " ".join(str(kw).upper().translate(ACCENT_MAP).split())
-                        clean_kw = clean_kw.replace('.', '').replace(',', '').replace('/', '')
-                        master_map[clean_kw] = mun_id
-                        
+                        clean_kw = normalize_text(kw)
+                        if clean_kw:
+                            master_map[clean_kw] = mun_id
+
+            # Si el lote es menor al límite, ya terminamos
+            if len(batch_data) < batch_size:
+                break
+                
+            current_batch += 1
+
+        print(f"✅ Mapa de municipios cargado y listo ({len(master_map)} referencias).")
         return master_map
+
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error crítico descargando el catálogo de municipios: {e}")
         return {}
-    
+
 def upload_dataframe_to_supabase(df: pd.DataFrame, table_name: str, on_conflict_col: str = None):
     """
     Sube un DF a Supabase, limpiando recursivamente tipos NumPy y fechas.
