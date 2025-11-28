@@ -1,0 +1,183 @@
+[
+  {
+    "id": "4ab554f7-68a6-4ce5-a051-6b704de33431",
+    "slug": "companies-summary",
+    "title": "Radiografía Industrial 2024",
+    "description": "Análisis de madurez, certificaciones y origen de capital de la industria hidrocálida.",
+    "position": 1,
+    "charts": [
+            {
+        "chart_id": "compliance-rate",
+        "title": "Tasa de Cumplimiento Normativo (ISO/IATF)",
+        "type": "pie",
+        "data": {
+          "labels": ["Certificación de Alto Nivel", "Certificación Básica", "En Proceso", "Sin Certificación"],
+          "datasets": [
+            {
+              "label": "Empresas",
+              "data": [45, 120, 60, 30]
+            }
+          ]
+        }
+      },
+      {
+        "chart_id": "tech-roi",
+        "title": "Eficiencia: Inversión Tech vs Ahorro Operativo",
+        "type": "bar",
+        "data": {
+          "labels": ["Automotriz", "Agroindustria", "Textil", "Electrónica", "Logística"],
+          "datasets": [
+            {
+              "label": "Inversión en Automatización (M USD)",
+              "data": [120, 45, 30, 90, 60],
+              "backgroundColor": "rgba(54, 162, 235, 0.7)",
+              "borderColor": "rgba(54, 162, 235, 1)",
+              "borderWidth": 1
+            },
+            {
+              "label": "Ahorro Generado (Anual)",
+              "data": [150, 35, 15, 110, 75],
+              "backgroundColor": "rgba(75, 192, 192, 0.7)",
+              "borderColor": "rgba(75, 192, 192, 1)",
+              "borderWidth": 1
+            }
+          ]
+        }
+      },
+      {
+        "chart_id": "ied-origin",
+        "title": "Origen de Inversión Extranjera (IED)",
+        "type": "bar",
+        "data": {
+          "labels": ["Japón", "EE.UU.", "Alemania", "China", "Francia", "España"],
+          "datasets": [
+            {
+              "label": "Millones USD (Acumulado 2024)",
+              "data": [1250, 980, 850, 600, 320, 150]
+            }
+          ]
+        }
+      },
+      {
+        "chart_id": "industry-40",
+        "title": "Adopción de Industria 4.0 por Sector",
+        "type": "line",
+        "data": {
+          "labels": ["Automotriz", "Aeroespacial", "Electrónica", "Metalmecánica", "Agroindustria", "Textil"],
+          "datasets": [
+            {
+              "label": "Índice de Digitalización (0-100)",
+              "data": [85, 92, 78, 45, 30, 25],
+              "fill": true,
+              "tension": 0.4
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "b30f3372-6849-4834-909f-c74f5bde0c26",
+    "slug": "strategic-top-10",
+    "title": "Rankings Estratégicos (Top 10)",
+    "description": "Focos rojos y verdes: Empresas y zonas con mayor impacto económico.",
+    "position": 2,
+    "charts": [
+      {
+        "chart_id": "top-exporters",
+        "title": "Líderes Exportadores: Nissan y Compas concentran volumen",
+        "type": "bar",
+        "data": {
+          "labels": ["NISSAN MEXICANA", "COMPAS", "SENSATA TECH", "FLEX", "MARELLI"],
+          "datasets": [
+            {
+              "label": "Volumen Exportación (Ton/Mes)",
+              "data": [5000, 3200, 2800, 2100, 1900]
+            }
+          ]
+        }
+      },
+      {
+        "chart_id": "energy-consumption",
+        "title": "Consumo Crítico: PIVA domina la demanda (45%)",
+        "type": "pie",
+        "data": {
+          "labels": ["PIVA (Valle de Ags)", "FINSA", "PILAT (Logística)", "San Francisco IV", "Chichimeco"],
+          "datasets": [
+            {
+              "label": "Consumo (GWh)",
+              "data": [45, 25, 15, 10, 5]
+            }
+          ]
+        }
+      },
+      {
+        "chart_id": "growth-comparison",
+        "title": "Crecimiento Interanual: Ventas vs Empleo",
+        "type": "line",
+        "data": {
+          "labels": ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
+          "datasets": [
+            {
+              "label": "% Crecimiento Ventas",
+              "data": [2, 4, 3, 5, 8, 9],
+              "borderColor": "rgba(75, 192, 192, 1)",
+              "fill": false
+            },
+            {
+              "label": "% Crecimiento Plantilla",
+              "data": [1, 1, 2, 2, 4, 5],
+              "borderColor": "rgba(255, 99, 132, 1)",
+              "fill": false
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "c99f3372-1234-5678-909f-a1b2c3d4e5f6",
+    "slug": "talent-gap",
+    "title": "Capital Humano y Brecha de Talento",
+    "description": "Análisis de oferta/demanda laboral, salarios promedio y rotación.",
+    "position": 3,
+    "charts": [
+      {
+        "chart_id": "salary-gap",
+        "title": "Salario Promedio: Ingeniería vs Técnico",
+        "type": "bar",
+        "data": {
+          "labels": ["Automotriz", "TI / Software", "Aeroespacial", "Logística"],
+          "datasets": [
+            {
+              "label": "Ingeniero Sr (MXN Mensual)",
+              "data": [45000, 52000, 48000, 35000],
+              "backgroundColor": "rgba(54, 162, 235, 0.8)"
+            },
+            {
+              "label": "Técnico Especializado",
+              "data": [18000, 22000, 20000, 14000],
+              "backgroundColor": "rgba(255, 206, 86, 0.8)"
+            }
+          ]
+        }
+      },
+      {
+        "chart_id": "turnover-rate",
+        "title": "Tasa de Rotación de Personal (Turnover)",
+        "type": "line",
+        "data": {
+          "labels": ["Q1 2023", "Q2 2023", "Q3 2023", "Q4 2023", "Q1 2024"],
+          "datasets": [
+            {
+              "label": "Rotación (%)",
+              "data": [12, 15, 14, 8, 5],
+              "tension": 0.3,
+              "fill": true
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

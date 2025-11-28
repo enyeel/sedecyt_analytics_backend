@@ -28,3 +28,6 @@ app/api/test_api.http
 # Ignore specific data files
 certifications.txt
 ideas.txt
+
+# Ignore demo run script
+demo_run.py

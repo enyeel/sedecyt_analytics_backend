@@ -1,0 +1,26 @@
+[
+  {
+    "id": "4ab554f7-68a6-4ce5-a051-6b704de33431",
+    "created_at": "2025-11-19T19:04:15+00:00",
+    "slug": "companies-summary",
+    "title": "Radiografía Industrial 2024",
+    "description": "Análisis de madurez, certificaciones y origen de capital de la industria hidrocálida.",
+    "position": 1
+  },
+  {
+    "id": "b30f3372-6849-4834-909f-c74f5bde0c26",
+    "created_at": "2025-11-24T19:44:52+00:00",
+    "slug": "strategic-top-10",
+    "title": "Rankings Estratégicos (Top 10)",
+    "description": "Focos rojos y verdes: Empresas y zonas con mayor impacto económico.",
+    "position": 2
+  },
+  {
+    "id": "c99f3372-1234-5678-909f-a1b2c3d4e5f6",
+    "created_at": "2025-11-25T10:00:00+00:00",
+    "slug": "talent-gap",
+    "title": "Capital Humano y Brecha de Talento",
+    "description": "Análisis de oferta/demanda laboral, salarios promedio y rotación.",
+    "position": 3
+  }
+]

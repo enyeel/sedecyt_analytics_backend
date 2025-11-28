@@ -1,5 +1,7 @@
 from flask import jsonify, Blueprint, request
 from app.api.auth_decorator import token_required
+import os
+import json
 
 
 api_bp = Blueprint("api", __name__)
@@ -66,19 +68,19 @@ def get_all_dashboards():
     """
     from app.services import dashboard_service
     print("Petición para obtener la lista de dashboards")
-    dashboards_list = dashboard_service.get_all_dashboards_list()
+    # dashboards_list = dashboard_service.get_all_dashboards_list()
+    
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, '..', 'data', 'inputs', 'mock_dashboards_list.json')
+    with open(file_path, 'r', encoding='utf-8') as f:
+        dashboards_list = json.load(f)
     
     response = jsonify(dashboards_list)
-    # HEADERS:
-    # public vs private:
-    # 'private': Solo el navegador del usuario final puede guardar esto. (Correcto para datos con login)
-    # 'public': Un servidor intermedio (CDN) podría guardarlo para todos. (Peligroso para datos de sesión)
-    
-    # max-age=300:
-    # "Esta información es fresca por 300 segundos (5 minutos)".
-    # Si SWR pregunta de nuevo a los 2 min, el navegador le da esto sin tocar tu servidor Flask.
     
     response.headers['Cache-Control'] = 'private, max-age=300'
+    
+    print("--- DEBUG: SENDING THIS JSON TO FRONTEND ---")
+    print(response.get_data(as_text=True))
     
     return response, 200
     
@@ -93,10 +95,19 @@ def get_single_dashboard(dashboard_slug):
     print(f"Petición para obtener el dashboard con slug: {dashboard_slug}")
 
     # 1. Get the list of ALL dashboards, fully assembled with their charts.
-    all_dashboards = dashboard_service.get_dashboards_with_data()
+    # all_dashboards = dashboard_service.get_dashboards_with_data()
     
     # 2. Find the specific dashboard the user requested from that complete list.
-    target_dashboard = next((d for d in all_dashboards if d.get('slug') == dashboard_slug), None)
+    # target_dashboard = next((d for d in all_dashboards if d.get('slug') == dashboard_slug), None)
+    
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, '..', 'data', 'inputs', 'mock_dashboards_full.json')
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        all_dashboards_data = json.load(f)
+
+    # Buscamos el dashboard que coincida con el slug solicitado
+    target_dashboard = next((d for d in all_dashboards_data if d.get('slug') == dashboard_slug), None)
 
     if not target_dashboard:
         return jsonify({"error": "Dashboard not found"}), 404
