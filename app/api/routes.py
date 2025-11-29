@@ -9,6 +9,26 @@ api_bp = Blueprint("api", __name__)
 
 #----------------------ENDPOINTS----------------------#
 
+from config.dashboards_config import DASHBOARDS_CONFIG # <--- Importamos la config directa
+
+@api_bp.route("/dashboards/meta", methods=['GET'])
+@token_required
+def get_dashboards_meta():
+    """
+    Ruta 'Super Express' que devuelve metadatos desde memoria (RAM).
+    No consulta la base de datos, por lo que es inmediara.
+    """
+    try:
+        # Simplemente contamos la longitud de la lista en memoria
+        count = len(DASHBOARDS_CONFIG)
+        
+        return jsonify({
+            "count": count,
+            "source": "memory" # Para que sepas que vino del caché/config
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # Endpoint de prueba para verificar que la API está funcionando
 @api_bp.route("/health", methods = ["GET"])
 def health_check():
@@ -45,20 +65,6 @@ def get_table(tabla):                                 #el nombre de la tabla se 
 
 # Endpoint de prueba para verificar la conexión con Google Sheets
 
-@api_bp.route("/sheets", methods=['GET'])
-#@token_required
-def get_contactos_from_sheet():
-    from app.core.connections import google_sheets_service
-
-    print("Petición para obtener datos de Google Sheets")
-
-    try:
-        # Solo le pasas el nombre de la pestaña, ¡y listo!
-        df_contactos = google_sheets_service.read_worksheet_as_dataframe("Formulario Desarrollo Industria")
-        contactos_json = df_contactos.to_dict(orient='records')
-        return jsonify(contactos_json), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 @api_bp.route("/dashboards", methods=['GET'])
 @token_required
@@ -68,12 +74,13 @@ def get_all_dashboards():
     """
     from app.services import dashboard_service
     print("Petición para obtener la lista de dashboards")
-    # dashboards_list = dashboard_service.get_all_dashboards_list()
+    dashboards_list = dashboard_service.get_all_dashboards_list()
     
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_dir, '..', 'data', 'inputs', 'mock_dashboards_list.json')
-    with open(file_path, 'r', encoding='utf-8') as f:
-        dashboards_list = json.load(f)
+    # For this example, we'll load from a mock JSON file.
+    # base_dir = os.path.dirname(os.path.abspath(__file__))
+    # file_path = os.path.join(base_dir, '..', 'data', 'inputs', 'mock_dashboards_list.json')
+    # with open(file_path, 'r', encoding='utf-8') as f:
+    #     dashboards_list = json.load(f)
     
     response = jsonify(dashboards_list)
     
@@ -95,19 +102,17 @@ def get_single_dashboard(dashboard_slug):
     print(f"Petición para obtener el dashboard con slug: {dashboard_slug}")
 
     # 1. Get the list of ALL dashboards, fully assembled with their charts.
-    # all_dashboards = dashboard_service.get_dashboards_with_data()
+    all_dashboards = dashboard_service.get_dashboards_with_data()
     
-    # 2. Find the specific dashboard the user requested from that complete list.
-    # target_dashboard = next((d for d in all_dashboards if d.get('slug') == dashboard_slug), None)
-    
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_dir, '..', 'data', 'inputs', 'mock_dashboards_full.json')
+    # For this example, we'll load from a mock JSON file.
+    # base_dir = os.path.dirname(os.path.abspath(__file__))
+    # file_path = os.path.join(base_dir, '..', 'data', 'inputs', 'mock_dashboards_full.json')
 
-    with open(file_path, 'r', encoding='utf-8') as f:
-        all_dashboards_data = json.load(f)
+    # with open(file_path, 'r', encoding='utf-8') as f:
+    #     all_dashboards = json.load(f)
 
     # Buscamos el dashboard que coincida con el slug solicitado
-    target_dashboard = next((d for d in all_dashboards_data if d.get('slug') == dashboard_slug), None)
+    target_dashboard = next((d for d in all_dashboards if d.get('slug') == dashboard_slug), None)
 
     if not target_dashboard:
         return jsonify({"error": "Dashboard not found"}), 404

@@ -22,25 +22,64 @@ def _format_chart_object(title: str, chart_type: str, data_label: str, analysis_
             "datasets": [{"label": data_label, "data": analysis_result["values"]}],
         },
     }
- 
+
 def run_analytics_etl():
-    """
-    Orchestrates the entire analytics update process.
-    1. Fetches clean data from Supabase.
-    2. Defines the structure of dashboards and their charts.
-    3. Generates chart data for each defined chart.
-    4. Upserts the dashboard and chart data back to Supabase.
-    """
     print("--- Starting Analytics Update Process ---")
 
-    # --- 1. EXTRACTION: Get the clean company data ---
+    # --- 1. EXTRACTION ---
     print("Step 1: Fetching all required data sources...")
+    
+    # Traemos las tablas principales
+    df_companies = pd.DataFrame(supabase_service.get_all_from('companies'))
+    df_responses = pd.DataFrame(supabase_service.get_all_from('responses'))
+    
+    # [NUEVO] Traemos el catálogo de municipios para traducir los IDs
+    df_mun_catalog = pd.DataFrame(supabase_service.get_all_from('municipality_catalog'))
+
+    print(f"  - Fetched {len(df_companies)} company records.")
+    print(f"  - Fetched {len(df_mun_catalog)} municipalities.")
+
+    # --- 1.5. ENRICHMENT (Corrección de colisión de nombres) ---
+    if 'municipality_id' in df_companies.columns and not df_mun_catalog.empty:
+        print("  - Joining companies with municipality catalog...")
+        
+        df_companies = df_companies.merge(
+            df_mun_catalog[['id', 'municipality_name']], 
+            left_on='municipality_id',
+            right_on='id',
+            how='left',
+            suffixes=('', '_mun')  # <--- ¡ESTA ES LA CLAVE!
+        )
+        # Explicación: 
+        # '' (vacío) -> Mantiene 'id' de companies tal cual.
+        # '_mun' -> Renombra el 'id' del catálogo a 'id_mun'.
+        
+        df_companies.rename(columns={'municipality_name': 'municipality'}, inplace=True)
+
+    # --- TRUCO DE ANALISTA SENIOR (Merge Companies -> Responses) ---
+    if not df_companies.empty and not df_responses.empty:
+        # 1. Seleccionamos qué columnas queremos robarle a la tabla de companies
+        # OJO: Traemos 'id' para poder hacer el match
+        cols_to_merge = ['id', 'clean_rfc', 'sector'] 
+        
+        # Agregamos municipality si ya la recuperamos del catálogo
+        if 'municipality' in df_companies.columns:
+            cols_to_merge.append('municipality')
+            
+        # 2. Hacemos el MERGE usando los IDs numéricos
+        # responses.company_id  <--->  companies.id
+        df_responses = df_responses.merge(
+            df_companies[cols_to_merge], 
+            left_on='company_id', # La llave en responses
+            right_on='id',        # La llave en companies
+            how='left'
+        )
+    
+    # Empaquetamos para el análisis
     data_sources = {
-        'companies': pd.DataFrame(supabase_service.get_all_from('companies')),
-        'responses': pd.DataFrame(supabase_service.get_all_from('responses'))
+        'companies': df_companies,
+        'responses': df_responses
     }
-    print(f"  - Fetched {len(data_sources['companies'])} company records.")
-    print(f"  - Fetched {len(data_sources['responses'])} response records.")
 
     # --- 3. TRANSFORMATION: Generate all chart data ---
     print("\nStep 2: Generating chart data...")

@@ -14,12 +14,38 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 print("Supabase client initialized.")
 
 def get_all_from(table_name: str):
-    try:
-        response = supabase.table(table_name).select("*").execute()
-        return response.data
-    except Exception as e:
-        print(f"Error fetching data from {table_name}: {e}")
-        return {"error": f"Could not fetch data from {table_name}"}
+    """
+    Recupera TODOS los registros de una tabla, superando el límite de 1000 de Supabase.
+    """
+    all_data = []
+    page_size = 1000
+    start = 0
+    
+    print(f"Fetching full data from '{table_name}'...")
+    
+    while True:
+        try:
+            # Pedimos un rango: del 0 al 999, luego 1000 a 1999...
+            response = supabase.table(table_name).select("*").range(start, start + page_size - 1).execute()
+            data = response.data
+            
+            if not data:
+                break
+                
+            all_data.extend(data)
+            
+            # Si nos devolvió menos de lo que pedimos, es la última página
+            if len(data) < page_size:
+                break
+                
+            start += page_size
+            
+        except Exception as e:
+            print(f"Error fetching data from {table_name} (range {start}): {e}")
+            return {"error": f"Could not fetch data from {table_name}"}
+            
+    print(f"  -> Total fetched from {table_name}: {len(all_data)}")
+    return all_data
 
 def _clean_value(v):
     """

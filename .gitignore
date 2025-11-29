@@ -29,5 +29,5 @@ app/api/test_api.http
 certifications.txt
 ideas.txt
 
-# Ignore demo run script
+# Ignore specific Python scripts
 demo_run.py
