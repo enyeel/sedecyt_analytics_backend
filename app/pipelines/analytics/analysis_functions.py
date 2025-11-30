@@ -83,3 +83,78 @@ def analyze_top_ranking(df: pd.DataFrame, label_col: str, value_col: str = None,
         return {"labels": df_sorted[label_col].astype(str).tolist(), "values": df_sorted[value_col].tolist()}
 
     return None
+
+def analyze_array_frequency(df: pd.DataFrame, column: str, top_n: int = 10, catalog_df: pd.DataFrame = None, map_id_col: str = 'id', map_name_col: str = 'acronym', **kwargs):
+    """
+    1. Explota listas de IDs.
+    2. Cuenta frecuencias.
+    3. (Opcional) Traduce IDs a Nombres usando un catálogo.
+    """
+    if column not in df.columns:
+        return None
+    
+    # 1. Limpieza y Validación de Arrays
+    # A veces Pandas lee los arrays de Postgres como strings "['1', '2']". 
+    # Aseguramos que sean listas reales.
+    def ensure_list(x):
+        if isinstance(x, list): return x
+        if isinstance(x, str): 
+            try:
+                # Truco sucio pero efectivo para limpiar formato string de array
+                clean = x.replace('{', '').replace('}', '').replace('[', '').replace(']', '').replace('"', '')
+                return [i.strip() for i in clean.split(',') if i.strip()]
+            except:
+                return []
+        return []
+
+    # Aplicamos limpieza
+    valid_rows = df.copy()
+    valid_rows[column] = valid_rows[column].apply(ensure_list)
+    valid_rows = valid_rows[valid_rows[column].map(len) > 0] # Filtrar vacíos
+
+    if valid_rows.empty:
+        return {"labels": [], "values": []}
+
+    # 2. Explotar (Unnest)
+    exploded_series = valid_rows[column].explode()
+    
+    # 3. Contar Frecuencias (Top N IDs)
+    counts = exploded_series.value_counts().head(top_n)
+    
+    # --- FASE DE TRADUCCIÓN ---
+    labels = counts.index.tolist() # Por defecto son los IDs
+    
+    if catalog_df is not None:
+        # Crear diccionario de mapeo: { '14': 'ISO9000', '27': 'ISO9001' }
+        # Convertimos a string ambos lados para asegurar match
+        mapping = dict(zip(
+            catalog_df[map_id_col].astype(str), 
+            catalog_df[map_name_col]
+        ))
+        
+        # Traducir los labels
+        # Si no encuentra el ID, pone "ID_Desconocido"
+        labels = [mapping.get(str(x), f"ID {x}") for x in labels]
+
+    return {"labels": labels, "values": counts.values.tolist()}
+
+def analyze_array_populated_bool(df: pd.DataFrame, column: str, true_label="Certificada", false_label="Sin Certificación", **kwargs):
+    """
+    Crea una métrica booleana basada en si un array/lista tiene elementos o está vacío.
+    """
+    if column not in df.columns: return None
+    
+    # Función auxiliar para checar si tiene datos
+    def has_data(x):
+        if isinstance(x, list): return len(x) > 0
+        if isinstance(x, str): return x.strip() not in ['[]', '{}', ''] # Check básico de string vacío
+        return False
+
+    # Calculamos
+    has_cert = df[column].apply(has_data)
+    counts = has_cert.value_counts()
+    
+    # Formateamos etiquetas bonitas
+    labels = [true_label if idx else false_label for idx in counts.index]
+    
+    return {"labels": labels, "values": counts.values.tolist()}

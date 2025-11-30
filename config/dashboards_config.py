@@ -1,7 +1,7 @@
 # This file defines the structure and configuration for all dynamically generated dashboards.
 # The analytics_service will use this config to generate and update the data in Supabase.
 
-from app.pipelines.analytics.analysis_functions import analyze_categorical, analyze_continuous_binned, analyze_top_ranking
+from app.pipelines.analytics.analysis_functions import analyze_categorical, analyze_continuous_binned, analyze_top_ranking, analyze_array_frequency, analyze_array_populated_bool
 
 DASHBOARDS_CONFIG = [
     {
@@ -71,7 +71,7 @@ DASHBOARDS_CONFIG = [
         "slug": "strategic-top-10",
         "title": "Rankings Estratégicos (Top 10)",
         "description": "Empresas y zonas destacadas por generación de empleo y densidad industrial.",
-        "position": 2,
+        "position": 3,
         "charts": [
             {
                 "slug": "top-10-employers",
@@ -89,24 +89,24 @@ DASHBOARDS_CONFIG = [
                     "aggregation": "raw"            
                 }
             },
-            # --- COMENTADO TEMPORALMENTE (Esperando limpieza de datos) ---
-            # {
-            #     "slug": "top-10-industrial-parks",
-            #     "data_source_key": "companies",
-            #     "analysis_type": analyze_top_ranking,
-            #     "formatter_params": {
-            #         "title": "Top 10: Parques con Mayor Densidad", 
-            #         "chart_type": "pie", 
-            #         "data_label": "Empresas Instaladas"
-            #     },
-            #     "params": {
-            #         "label_col": "industrial_park", 
-            #         "value_col": None,              
-            #         "limit": 10,
-            #         "aggregation": "count"
-            #     }
-            # },
-            # -------------------------------------------------------------
+            {
+                # --------- DESACTIVADO por ahora ----------------
+                "slug": "top-10-industrial-parks",
+                "is_active": False, 
+                "data_source_key": "companies",
+                "analysis_type": analyze_top_ranking,
+                "formatter_params": {
+                    "title": "Top 10: Parques con Mayor Densidad",
+                    "chart_type": "pie", 
+                    "data_label": "Empresas Instaladas"
+                },
+                "params": {
+                    "label_col": "industrial_park", 
+                    "value_col": None,
+                    "limit": 10,
+                    "aggregation": "count"
+                }
+            },
             # 3. Top Municipios por Fuerza Laboral (Ranking Agrupado - Suma)
             # Responde: ¿Dónde está la masa laboral más grande?
             {
@@ -180,6 +180,87 @@ DASHBOARDS_CONFIG = [
                     "aggregation": "count"
                 }
             }
+        ]
+    },
+    {
+        "slug": "industrial-quality",
+        "title": "Calidad y Certificaciones",
+        "description": "Análisis de madurez industrial, cumplimiento normativo y estándares de calidad.",
+        "position": 2,
+        "charts": [
+            # --- CHART 1: EL TOP 10 (La joya de la corona) ---
+            # Muestra cuáles son las certificaciones que realmente dominan el estado
+            {
+                "slug": "top-specific-certs",
+                "data_source_key": "companies",
+                "analysis_type": analyze_array_frequency,
+                "catalog_source_key": "certifications_catalog",
+                "formatter_params": {
+                    "title": "Top 10 Estándares Específicos", 
+                    "chart_type": "bar",
+                    "data_label": "Empresas"
+                },
+                "params": {
+                    "column": 'certification_ids',
+                    "top_n": 10,
+                    "map_id_col": "id",
+                    "map_name_col": "acronym" # Aquí sí mostramos el nombre (ISO9001)
+                }
+            },
+            # --- CHART 2: TASA DE CERTIFICACIÓN (Dona) ---
+            # Un indicador simple pero poderoso de competitividad
+            # (Requiere que tengas un campo booleano o lo calcules, 
+            #  por ahora podemos usar 'procurement_tier' como proxy de madurez si no tienes booleano de certs)
+{
+                "slug": "compliance-rate",
+                "data_source_key": "companies",
+                "analysis_type": analyze_array_populated_bool, # <--- La nueva función
+                "formatter_params": {
+                    "title": "Tasa de Cumplimiento Normativo (Empresas Certificadas)", 
+                    "chart_type": "pie", 
+                    "data_label": "Empresas"
+                },
+                "params": {
+                    "column": 'certification_ids' # Si tiene algo aquí, cuenta como "Sí"
+                }
+            },
+            # --- CHART 3: CRUZAR DATOS (Avanzado) ---
+            # ¿Qué sectores invierten más en calidad?
+            # (Este requiere una función de 'tablas cruzadas' que podemos hacer luego, 
+            #  pero por ahora mete el de Sectores aquí también para dar contexto)
+            {
+                "slug": "quality-by-sector-context",
+                "is_active": False,  # <--- Desactivado por ahora
+                "data_source_key": "companies",
+                "analysis_type": analyze_categorical,
+                "formatter_params": {
+                    "title": "Sectores Evaluados", 
+                    "chart_type": "bar", 
+                    "data_label": "Empresas"
+                },
+                "params": {
+                    "column": 'sector'
+                }
+            },
+            # --- CHART 4: CERTIFICACIONES POR CATEGORÍA (NUEVO) ---
+            # Un enfoque diferente: ¿Qué categorías de certificaciones son las más comunes?
+            {
+                "slug": "certifications-by-category",
+                "data_source_key": "companies",
+                "analysis_type": analyze_array_frequency, # <--- Reusamos la de frecuencia
+                "catalog_source_key": "certifications_catalog",
+                "formatter_params": {
+                    "title": "Enfoque de Certificaciones (Por Categoría)", 
+                    "chart_type": "bar", # SmartChart lo hará horizontal si hay muchas
+                    "data_label": "Menciones"
+                },
+                "params": {
+                    "column": 'certification_ids',
+                    "top_n": 8,
+                    "map_id_col": "id",
+                    "map_name_col": "category" # <--- ¡TRUCO! Mapeamos al CAMPO DE CATEGORÍA
+                }
+            },
         ]
     }
 ]

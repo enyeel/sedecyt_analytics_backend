@@ -12,49 +12,49 @@ def get_all_dashboards_list():
         print(f"❌ Error fetching dashboard list from Supabase: {e}")
         return []
 
-
 def get_dashboards_with_data():
     """
     Fetches all dashboards and their pre-calculated charts from Supabase.
-    This is a lightweight operation designed to be called by the API.
     """
     try:
-        # 1. Fetch all dashboards, ordered by position
+        # 1. Fetch all dashboards...
         dashboards_response = supabase_service.supabase.table('dashboards').select('*').order('position').execute()
         dashboards = dashboards_response.data
-        print(f"DEBUG: Fetched {len(dashboards)} dashboards from DB.")
-        # print(f"DEBUG: Raw dashboards: {dashboards}") # Uncomment for extreme detail
-
-        # 2. Fetch all charts, ordered by position
+        
+        # 2. Fetch all charts...
         charts_response = supabase_service.supabase.table('charts').select('*').order('position').execute()
         all_charts = charts_response.data
-        print(f"DEBUG: Fetched {len(all_charts)} charts from DB.")
-        # print(f"DEBUG: Raw charts: {all_charts}") # Uncomment for extreme detail
-
-        # 3. Create a map of dashboard_id -> list of charts for easy lookup
+        
+        # 3. Create a map...
         charts_by_dashboard = {}
         for chart in all_charts:
+            
+            # 🔥 NUEVO: FILTRO DE BACKEND
+            # Si is_active es explícitamente False, ignoramos este registro.
+            # Usamos .get() para que si la columna no existe aún, asuma True (visible) por defecto.
+            if chart.get('is_active') is False:
+                print(f"Skipping inactive chart: {chart.get('chart_slug')}")
+                continue
+
             dashboard_id = chart['dashboard_id']
             if dashboard_id not in charts_by_dashboard:
                 charts_by_dashboard[dashboard_id] = []
-            print(f"DEBUG: Mapping chart '{chart['chart_slug']}' to dashboard_id '{dashboard_id}'")
             
-            # Reconstruct the chart object for the frontend
+            # Reconstruct the chart object...
             charts_by_dashboard[dashboard_id].append({
                 "chart_id": chart["chart_slug"],
                 "title": chart["title"],
                 "type": chart["chart_type"],
-                "data": chart["chart_data"] # Supabase client auto-parses JSONB
+                "data": chart["chart_data"]
+                # Ya no necesitas enviar 'is_active' al front, porque si llegó aquí, es True.
             })
 
-        # 4. Assemble the final response
+        # 4. Assemble...
         for dashboard in dashboards:
             dashboard['charts'] = charts_by_dashboard.get(dashboard['id'], [])
-            print(f"DEBUG: Assembled dashboard '{dashboard['slug']}' with {len(dashboard['charts'])} charts.")
-
-        print("--- DEBUG: FINAL ASSEMBLED OBJECT (first item) ---")
-        print(dashboards[0] if dashboards else "No dashboards found")
+            
         return dashboards
+
     except Exception as e:
         print(f"❌ Error fetching dashboards from Supabase: {e}")
         return []

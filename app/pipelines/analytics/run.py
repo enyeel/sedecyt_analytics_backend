@@ -78,7 +78,8 @@ def run_analytics_etl():
     # Empaquetamos para el análisis
     data_sources = {
         'companies': df_companies,
-        'responses': df_responses
+        'responses': df_responses,
+        'certifications_catalog': pd.DataFrame(supabase_service.get_all_from('certifications_catalog'))
     }
 
     # --- 3. TRANSFORMATION: Generate all chart data ---
@@ -112,7 +113,13 @@ def run_analytics_etl():
             # Select the correct DataFrame and analysis function from the config
             df = data_sources[chart_config["data_source_key"]]
             analysis_func = chart_config["analysis_type"]
-            analysis_params = chart_config["params"]
+            analysis_params = chart_config["params"].copy()
+            
+            # Si el config pide un 'catalog_source_key', buscamos ese DF en data_sources
+            if "catalog_source_key" in chart_config:
+                catalog_key = chart_config["catalog_source_key"]
+                if catalog_key in data_sources:
+                    analysis_params["catalog_df"] = data_sources[catalog_key]
 
             # Run the analysis
             analysis_result = analysis_func(df, **analysis_params)
@@ -127,7 +134,8 @@ def run_analytics_etl():
                     "title": chart_object["title"],
                     "chart_type": chart_object["type"],
                     "chart_data": chart_object["data"], # Pass the dictionary directly
-                    "position": i + 1
+                    "position": i + 1,
+                    "is_active": chart_config.get("is_active", True)
                 }
                 all_charts_to_upload.append(chart_to_upload)
             else:
