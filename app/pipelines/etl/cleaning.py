@@ -58,19 +58,6 @@ def clean_rfc(text: Union[str, float]) -> str:
     # 4. Fallo: el texto no es RFC mexicano ni ID numérico típico
     return f'ID_FALLO_{cleaned[:15]}'
 
-def clean_industrial_park(text):
-    if pd.isna(text) or str(text).strip() == '':
-        return 'SIN PARQUE'
-    
-    # Normalizar a mayúsculas y quitar espacios
-    cleaned = str(text).upper().strip()
-    
-    # Lista negra de valores que significan "Nada"
-    if cleaned in ['NO', 'N/A', 'NA', 'NINGUNO', '0', '-']:
-        return 'SIN PARQUE'
-        
-    return cleaned
-
 def clean_email(text: Union[str, float]) -> str:
     """
     Limpia el email: minúsculas y elimina espacios.
@@ -558,3 +545,16 @@ def clean_municipality_to_id(text: Union[str, float]) -> Union[int, None]:
             return mun_map[best_match]
 
     return None
+
+def clean_industrial_park(text):
+    if pd.isna(text) or str(text).strip() == '':
+        return 'SIN PARQUE'
+    
+    # Normalizar a mayúsculas y quitar espacios
+    cleaned = str(text).upper().strip()
+    
+    # Lista negra de valores que significan "Nada"
+    if cleaned in ['NO', 'N/A', 'NA', 'NINGUNO', '0', '-']:
+        return 'SIN PARQUE'
+        
+    return cleaned
