@@ -128,7 +128,7 @@ def search_company():
 # ----------------------VISTAS PARA TABLAS DEL FRONT ---------------------- #
 
 # --- VISTA 1: EMPRESAS LIMPIAS ---
-@api_bp.route("/table/companies", methods=['GET'])
+@api_bp.route("/data/companies-view", methods=['GET'])
 @token_required
 def get_companies_view():
     from app.core.connections.supabase_service import get_all_from
@@ -224,7 +224,7 @@ def get_companies_view():
     }), 200
 
 # --- VISTA 2: CONTACTOS LIMPIOS ---
-@api_bp.route("/table/contacts", methods=['GET'])
+@api_bp.route("/data/contacts-view", methods=['GET'])
 @token_required
 def get_contacts_view():
     from app.core.connections.supabase_service import get_all_from
@@ -263,16 +263,17 @@ def get_contacts_view():
     }), 200
     
 # --- VISTA 3: RESPUESTAS (EL MONSTRUO DESEMPAQUETADO) ---
-@api_bp.route("/table/responses", methods=['GET'])
+@api_bp.route("/data/responses-view", methods=['GET'])
 @token_required
 def get_responses_view():
     from app.core.connections.supabase_service import get_all_from
     import pandas as pd
     
-    # 1. Traer todas las tablas necesarias para los JOINs
+    # 1. Traer TODAS las tablas necesarias
     responses = get_all_from('responses')
     companies = get_all_from('companies')
     contacts = get_all_from('contacts')
+    cert_catalog = get_all_from('certifications_catalog')
     
     if not responses: return jsonify([]), 200
 
@@ -280,57 +281,139 @@ def get_responses_view():
     df_resp = pd.DataFrame(responses)
     df_comp = pd.DataFrame(companies)
     df_cont = pd.DataFrame(contacts)
+    df_cert = pd.DataFrame(cert_catalog) if cert_catalog else pd.DataFrame()
     
-    # 3. Crear diccionarios de mapeo (ID -> Nombre)
-    # Esto es mucho más rápido que hacer queries individuales
+    # 3. Mapeos (Diccionarios para velocidad)
     comp_map = dict(zip(df_comp['id'], df_comp['trade_name'])) if not df_comp.empty else {}
     
-    # Mapeo de contacto: "Nombre Apellido"
+    # Mapeo de Contactos
+    cont_map = {}
     if not df_cont.empty:
         df_cont['full_name'] = df_cont['first_name'].fillna('') + ' ' + df_cont['last_name'].fillna('')
         cont_map = dict(zip(df_cont['id'], df_cont['full_name']))
-    else:
-        cont_map = {}
 
-    # 4. Procesamiento Fila por Fila (Para aplanar el JSON)
+    # Mapeo de Certificaciones (ID -> Nombre)
+    cert_name_map = {}
+    if not df_cert.empty:
+        cert_name_map = dict(zip(df_cert['id'].astype(str), df_cert['acronym']))
+
+    # 4. Pre-calcular Certificaciones por Empresa (Company ID -> String "ISO9001, IATF...")
+    company_certs_map = {}
+    if not df_comp.empty and 'certification_ids' in df_comp.columns:
+        for _, row in df_comp.iterrows():
+            c_ids = row.get('certification_ids')
+            if isinstance(c_ids, list) and c_ids:
+                names = [cert_name_map.get(str(cid), str(cid)) for cid in c_ids]
+                company_certs_map[row['id']] = ", ".join(names)
+            else:
+                company_certs_map[row['id']] = "-"
+
+    # 5. Procesamiento Fila por Fila (Aplanar y Limpiar)
     flat_data = []
     
     for _, row in df_resp.iterrows():
-        # Objeto base con los datos fijos
+        company_id = row.get('company_id')
+        
+        # --- A. PROCESAR CHECKBOXES ORIGINALES (ISO IDS) ---
+        # El campo en DB suele ser 'iso_certification_ids' o similar (revisa tu DB)
+        # Asumimos que viene como lista [1, 2] o string "1, 2"
+        raw_iso_ids = row.get('iso_certification_ids') 
+        iso_original_text = "-"
+        
+        if isinstance(raw_iso_ids, list) and raw_iso_ids:
+            # Traducimos IDs a Nombres: [14, 16] -> "ISO9001, IATF16949"
+            names = [cert_name_map.get(str(x), str(x)) for x in raw_iso_ids]
+            iso_original_text = ", ".join(names)
+        elif isinstance(raw_iso_ids, str) and raw_iso_ids.strip():
+            # Por si viene como string "14,16"
+            ids = raw_iso_ids.replace('{','').replace('}','').split(',')
+            names = [cert_name_map.get(x.strip(), x.strip()) for x in ids]
+            iso_original_text = ", ".join(names)
+
+        # Objeto base
         base_obj = {
-            "Fecha": str(row.get('response_date', ''))[:10], # Solo la fecha YYYY-MM-DD
-            "Empresa": comp_map.get(row.get('company_id'), 'ID Desconocido'),
+            "Fecha": str(row.get('response_date', ''))[:10],
+            "Empresa": comp_map.get(company_id, 'ID Desconocido'),
             "Contacto": cont_map.get(row.get('contact_id'), 'ID Desconocido'),
             "¿Expansión?": "Sí" if row.get('has_expansion_plans') else "No",
-            "¿Ingeniería?": "Sí" if row.get('has_engineering_area') else "No"
+            "¿Ingeniería?": "Sí" if row.get('has_engineering_area') else "No",
+            
+            # 🔥 COLUMNA 1: LO QUE CLICKEARON
+            "Certs (Selección Original)": iso_original_text,
+            
+            # 🔥 COLUMNA 3: LA VERDAD FINAL (De la empresa)
+            "Certificaciones (Limpias)": company_certs_map.get(company_id, "-")
         }
         
-        # 🔥 LA MAGIA: Desempaquetar 'additional_data' (JSONB)
-        # Esto convierte {"Pregunta": "Respuesta"} en columnas reales
+        # Desempaquetar 'additional_data'
         json_data = row.get('additional_data')
         if isinstance(json_data, dict):
             for question, answer in json_data.items():
-                # Limpieza de claves HTML (a veces Hubspot manda <strong>)
                 clean_q = question.replace('<strong>', '').replace('</strong>', '').strip()
-                # Cortar títulos de columnas muy largos si es necesario
-                if len(clean_q) > 50: clean_q = clean_q[:47] + "..."
                 
-                base_obj[clean_q] = str(answer) # Aseguramos que sea string
+                # 🔥 COLUMNA 2: LO QUE ESCRIBIERON
+                if "otra certificación" in clean_q.lower():
+                    clean_q = "Certs (Texto Original)"
+                
+                elif "proyecto de expansión" in clean_q.lower():
+                    clean_q = "Proyecto Expansión (Detalle)"
+                
+                elif "Contact ID" in clean_q:
+                    clean_q = "HubSpot ID"
+
+                base_obj[clean_q] = str(answer)
         
         flat_data.append(base_obj)
 
-    # 5. Crear DataFrame final para manejar orden de columnas si quieres
     df_final = pd.DataFrame(flat_data)
     df_final = df_final.fillna('-')
-    
-    # Orden de las columnas
-    fixed_columns = ["Fecha", "Empresa", "Contacto", "¿Expansión?", "¿Ingeniería?"]
-    other_columns = [col for col in df_final.columns if col not in fixed_columns]
-    
-    column_order = fixed_columns + other_columns
-    df_final = df_final[column_order]
 
+    # 6. LIMPIEZA Y ORDENAMIENTO MAESTRO
+    
+    # Lista de columnas a ELIMINAR (Blacklist)
+    cols_to_drop = [
+        'Conversion Page', 
+        'Conversion Title', 
+        'Contact last name', 
+        'Contact first name'
+    ]
+    df_final.drop(columns=cols_to_drop, errors='ignore', inplace=True)
+
+    # Lista del ORDEN DESEADO (Whitelist)
+    # Nota: Asegúrate de que los textos coincidan con cómo salen después del clean_q
+    desired_order = [
+        "Fecha", 
+        "Empresa", 
+        "Contacto", 
+        "¿Expansión?", 
+        "¿Ingeniería?", 
+        "HubSpot Contact ID", 
+        "Contact email", 
+        "Proveeduría",
+        "Certs (Selección Original)", # 1. Checkboxes traducidos
+        "Certs (Texto Original)",     # 2. Input de texto libre
+        "Certificaciones (Limpias)",  # 3. Resultado consolidado
+        "Principales clientes",
+        "Necesidades y problemáticas",
+        "¿Capacidad de transformadores a adquirir?",
+        "Principal producto o servicio que proporciona",
+        "Proyecto Expansión (Detalle)",
+        "¿Cuál es la demanda de electricidad esperada ma...",
+        "¿Cuál es su demanda max actual de energia regis..."
+    ]
+
+    # Reordenar: Primero las deseadas (si existen), luego el resto (si sobró alguna col no mapeada)
+    existing_cols = df_final.columns.tolist()
+    final_cols = [c for c in desired_order if c in existing_cols]
+    
+    # Agregamos cualquier otra columna que haya sobrado (por si Hubspot manda algo nuevo)
+    # y que no esté en la lista de borrar
+    leftover_cols = [c for c in existing_cols if c not in final_cols and c not in cols_to_drop]
+    
+    df_final = df_final[final_cols + leftover_cols]
+
+    # 7. Retornar Data + Column Order para el Frontend
     return jsonify({
         "data": df_final.to_dict(orient='records'),
-        "columns": column_order
+        "columns": final_cols + leftover_cols # Le dice al frontend el orden explícito
     }), 200
