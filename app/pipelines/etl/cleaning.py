@@ -2,7 +2,7 @@ import re
 import pandas as pd
 from typing import Union, List, Dict
 from rapidfuzz import process, fuzz 
-from app.core.connections.supabase_service import get_municipalities_map
+from app.core.connections.supabase_service import get_municipalities_map, get_data_from_table
 
 # --- VARIABLES GLOBALES (CACHÉ) ---
 # Esta variable guardará el catálogo en memoria para no llamar a la BD mil veces
@@ -546,15 +546,44 @@ def clean_municipality_to_id(text: Union[str, float]) -> Union[int, None]:
 
     return None
 
-def clean_industrial_park(text):
-    if pd.isna(text) or str(text).strip() == '':
-        return 'SIN PARQUE'
-    
-    # Normalizar a mayúsculas y quitar espacios
-    cleaned = str(text).upper().strip()
-    
-    # Lista negra de valores que significan "Nada"
-    if cleaned in ['NO', 'N/A', 'NA', 'NINGUNO', '0', '-']:
-        return 'SIN PARQUE'
-        
-    return cleaned
+def standarize_park(dirty_name):
+    parques_db = get_data_from_table('industrial_parks_catalog', 'id,park_name,keywords')
+    PARK_TO_ID_MAP = {}
+    FUZZY_CANDIDATES = []
+
+    for item in parques_db:
+        park_id = item['id']
+        nombre_oficial = item['park_name']
+
+        key_oficial = str(nombre_oficial).upper().strip()
+        PARK_TO_ID_MAP[key_oficial] = park_id
+        FUZZY_CANDIDATES.append(key_oficial)
+
+        keywords = item.get('keywords')
+        if keywords:
+            for kw in keywords:
+                key_kw = str(kw).upper().strip()
+                PARK_TO_ID_MAP[key_kw] = park_id
+                FUZZY_CANDIDATES.append(key_kw)
+
+    if not dirty_name or pd.isna(dirty_name):   #siesta vacio regrasa none
+      return None
+
+    # 1. ESTANDARIZACIÓN Y LIMPIEZA DE PUNTUACIÓN
+    dirty_name = str(dirty_name).upper().strip()
+    dirty_name = dirty_name.replace('.', '').replace(',', '').replace('/', '')
+
+    if dirty_name in ['NO', 'NAN', 'NINGUNO', 'NA', '0', "", ".", "-"]:
+        return None
+
+    if dirty_name in PARK_TO_ID_MAP:              #siesta en las keyywords lo regresa limpiesito
+        return PARK_TO_ID_MAP[dirty_name]
+
+    # 4. FUZZY MATCHING
+    best_match_str, score = process.extractOne(dirty_name, FUZZY_CANDIDATES, scorer=fuzz.token_sort_ratio)  #ahora si los que quedan se pone a compararlos con el catalog
+
+    # 5. APLICAR REGLA DE CONFIANZA
+    if score >= 87:
+        return PARK_TO_ID_MAP [best_match_str]
+    else:
+        return dirty_name

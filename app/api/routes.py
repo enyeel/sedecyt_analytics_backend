@@ -27,7 +27,7 @@ def get_dashboards_meta():
         
         return jsonify({
             "count": count,
-            "source": "memory" # Para que sepas que vino del caché/config
+            "source": "memory" 
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

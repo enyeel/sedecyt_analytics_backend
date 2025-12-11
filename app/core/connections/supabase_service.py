@@ -194,3 +194,32 @@ def upload_dataframe_to_supabase(df: pd.DataFrame, table_name: str, on_conflict_
         # Debug avanzado
         if final_records:
             print("   DEBUG: First record keys:", final_records[0].keys())
+
+
+
+def get_data_from_table(table_name, column_to_select):
+    all_data = []  
+    current_page = 0
+    page_size = 1000
+
+    print(f"Iniciando descarga de {table_name}...")
+
+    while True:
+        start_index = current_page * page_size
+        end_index = start_index + page_size - 1
+
+        response = supabase.table(table_name).select(column_to_select).range(start_index, end_index).execute()
+
+
+        data = response.data
+        all_data.extend(data)
+
+        print(f"Descargados {len(all_data)} registros de {table_name}")
+
+        if len(data) < page_size:
+          break
+
+        current_page += 1
+
+    print(f"descarga de {table_name} completada. Total: {len(all_data)} filas.")
+    return all_data
