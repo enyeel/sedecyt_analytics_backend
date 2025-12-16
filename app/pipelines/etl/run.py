@@ -58,6 +58,10 @@ def convert_checkboxes_to_ids(cert_string, db_cert_catalog):
     return list(ids)
 
 def run_etl_process():
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(base_path, '..', '..', '..', 'data', 'outputs')
+    os.makedirs(output_dir, exist_ok=True)
+    
     print("--- Inicio del ETL SEDECyT Analytics ---")
 
     # ---------------------------------------------------------
@@ -73,10 +77,24 @@ def run_etl_process():
     # ---------------------------------------------------------
     # Step 1 & 2: Extracción y Limpieza Base
     # ---------------------------------------------------------
-    print("\nStep 1 & 2: Extract and Transform...")
+    # --- 1. EXTRACTION ---
+    print("Step 1: Extracting data from Google Sheets...")
     df_raw = read_worksheet_as_dataframe("Formulario Desarrollo Industria")
+    print(f"Número total de filas obtenidas: {len(df_raw)}")
+    
+    # [DEBUG] Exportar RAW puro
+    debug_path = os.path.join(output_dir, 'debug_01_raw_from_sheets.csv')
+    df_raw.to_csv(debug_path, index=False, encoding='utf-8-sig')
+    print(f"🔎 DEBUG: Datos crudos guardados en {debug_path}")
+
+    # --- 2. TRANSFORMATION ---
+    print("\nStep 2: Transforming data...")
     config = load_config()
-    processed_data = clean_and_process_data(df_raw, config) 
+    
+    # Pasamos el output_dir a processing para que pueda guardar sus propios debugs
+    processed_data = clean_and_process_data(df_raw, config, output_dir) 
+    
+    print("Main data structured into 'companies', 'contacts', and 'responses'.")
     
     # Asegurar fechas correctas
     processed_data['responses']['response_date'] = pd.to_datetime(processed_data['responses']['response_date'])

@@ -78,7 +78,7 @@
         "Parque Industrial": {
             "target_db_col": "industrial_park",
             "target_table": "companies",
-            "clean_func": "standarize_park"
+            "clean_func": "normalize_text"
         },
         "Certificaciones ISO ": {
             "target_db_col": "iso_certifications",

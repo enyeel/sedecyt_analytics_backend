@@ -1,32 +1,90 @@
 import pandas as pd
+import os
 from app.pipelines.etl import cleaning as cleaner
-from app.pipelines.etl.cleaning import clean_municipality_to_id, rescue_names
+from app.pipelines.etl.cleaning import rescue_names, normalize_text
+from app.core.connections.supabase_service import get_all_from
 
-def _link_municipalities_to_catalog(df_clean: pd.DataFrame) -> pd.DataFrame:
-    """
-    Lógica Híbrida:
-    1. Intenta obtener ID desde 'other_municipality'.
-    2. Si tiene ID -> Lo guarda en 'municipality_id' y BORRA 'other_municipality'.
-    3. Si NO tiene ID -> Deja 'municipality_id' vacío y CONSERVA 'other_municipality'.
-    """
-    if 'other_municipality' not in df_clean.columns:
-        return df_clean
+def _prepare_catalog_maps(catalog_data: list, name_col: str, id_col: str = 'id') -> tuple:
+    value_to_id_map = {}
+    fuzzy_candidates = []
 
-    print("Linking municipalities to catalog IDs...")
+    for item in catalog_data:
+        record_id = item[id_col]
+        
+        # AQUI EL TRUCO: Normalizamos también la BD para que "Rincón" sea "RINCON"
+        official_name = normalize_text(str(item[name_col]).upper().strip()) 
+        
+        value_to_id_map[official_name] = record_id
+        fuzzy_candidates.append(official_name)
+        
+        keywords = item.get('keywords')
+        if keywords:
+            for kw in keywords:
+                # Normalizamos las keywords de la BD también
+                kw_clean = normalize_text(str(kw).upper().strip())
+                value_to_id_map[kw_clean] = record_id
+                fuzzy_candidates.append(kw_clean)
+                
+    return value_to_id_map, fuzzy_candidates
+
+def _standardize_catalogs(df_clean: pd.DataFrame, debug_dir: str = None) -> pd.DataFrame:
+    print("Standardizing catalogs (Municipios & Parques)...")
+
+    # --- A. CARGA DE DATOS (Solo una vez) ---
+    # Idealmente esto se cargaría fuera y se pasaría como argumento, pero aquí está bien por ahora.
+    raw_municipios = get_all_from('municipality_catalog') # Tu tabla de municipios
+    raw_parques = get_all_from('industrial_parks_catalog') # Tu tabla de parques
     
-    # Generar columna de IDs aplicando la función inteligente
-    df_clean['municipality_id'] = df_clean['other_municipality'].apply(clean_municipality_to_id)
+    # --- B. PREPARACIÓN DE MAPAS ---
+    muni_map, muni_candidates = _prepare_catalog_maps(raw_municipios, 'municipality_name')
+    park_map, park_candidates = _prepare_catalog_maps(raw_parques, 'park_name')
     
-    df_clean['municipality_id'] = df_clean['municipality_id'].astype('Int64')
-    
-    # Limpieza de redundancia:
-    # Donde SÍ encontramos ID (notna), borramos el texto para no duplicar.
-    mask_success = df_clean['municipality_id'].notna()
-    df_clean.loc[mask_success, 'other_municipality'] = None
-    
+    print(f"🔎 DEBUG MAPAS:")
+    print(f"   - Municipios cargados: {len(muni_map)}")
+    print(f"   - Parques cargados: {len(park_map)}")
+    print(f"   - Ejemplo Keys Parques (normalizadas): {list(park_map.keys())[:5]}")
+
+    # --- C. APLICACIÓN DE LÓGICA (Vectorizada o Apply) ---
+    # --- 1. MUNICIPIOS (Con el SUPER PODER de limpieza extra) ---
+    if 'other_municipality' in df_clean.columns:
+        
+        # Definimos el ruido específico de esta región
+        RUIDO_MUNICIPIOS = ['AGS', 'AGUASCALIENTES', 'EDO', 'MEX', 'ZONA CENTRO']
+        
+        muni_results = df_clean['other_municipality'].apply(
+            lambda x: cleaner.smart_catalog_match(
+                x, 
+                muni_map, 
+                muni_candidates, 
+                threshold=90, 
+                extra_removals=RUIDO_MUNICIPIOS # <--- ¡AQUÍ ESTÁ LA CLAVE!
+            )
+        )
+        df_clean['municipality_id'] = muni_results.apply(lambda x: x[0])
+        df_clean['other_municipality'] = muni_results.apply(lambda x: x[1])
+
+    # --- 2. PARQUES INDUSTRIALES (Sin ruido específico por ahora) ---
+    if 'industrial_park' in df_clean.columns:
+        
+        # Para parques, a lo mejor "PARQUE" o "INDUSTRIAL" es ruido, 
+        # pero a veces ayuda al fuzzy, así que lo dejamos vacío o probamos.
+        RUIDO_PARQUES = [] 
+        
+        park_results = df_clean['industrial_park'].apply(
+            lambda x: cleaner.smart_catalog_match(
+                x, 
+                park_map, 
+                park_candidates, 
+                threshold=87,
+                extra_removals=RUIDO_PARQUES
+            )
+        )
+        df_clean['industrial_park_id'] = park_results.apply(lambda x: x[0])
+        df_clean['other_industrial_park'] = park_results.apply(lambda x: x[1])
+
     return df_clean
 
-def clean_and_process_data(df: pd.DataFrame, config: dict) -> dict:
+def clean_and_process_data(df: pd.DataFrame, config: dict, debug_output_dir: str = None) -> dict:
     """
     Applies cleaning functions, finalizes critical IDs, and structures data into tables.
     
@@ -40,12 +98,16 @@ def clean_and_process_data(df: pd.DataFrame, config: dict) -> dict:
     # 1. Initial Cleaning: Apply cleaning function for each column defined in the map.
     df_clean = _apply_initial_cleaning(df, config)
     
+    # [DEBUG] Exportar tras limpieza inicial
+    if debug_output_dir:
+        df_clean.to_csv(os.path.join(debug_output_dir, 'debug_02_initial_cleaning.csv'), index=False, encoding='utf-8-sig')
+    
     # 2. Post-Processing: Apply complex logic that depends on multiple columns.
     df_clean = _finalize_company_ids(df_clean)
     df_clean = _rescue_contact_names(df_clean)
     
     # --- NUEVA LÍNEA ---
-    df_clean = _link_municipalities_to_catalog(df_clean)
+    df_clean = _standardize_catalogs(df_clean, debug_output_dir)
     
     # 3. JSONB Creation: Consolidate extra data into a single JSONB column.
     df_clean = _create_jsonb_column(df, df_clean, config)
@@ -115,19 +177,53 @@ def _create_jsonb_column(df_raw: pd.DataFrame, df_clean: pd.DataFrame, config: d
 def _structure_data_into_tables(df_clean: pd.DataFrame, config: dict) -> dict:
     """Splits the master cleaned DataFrame into separate ones for each destination table."""
     
-    # Companies table (unique by clean_rfc)
-    company_cols = [p['target_db_col'] for p in config['cleaning_map'].values() if p['target_table'] == 'companies']
-    if 'municipality_id' in df_clean.columns:
-        company_cols.append('municipality_id')
-    df_companies = df_clean[['clean_rfc'] + [col for col in company_cols if col != 'clean_rfc']].drop_duplicates(subset=['clean_rfc'])
+    # --- 1. TABLA COMPANIES ---
+    # Obtener columnas definidas en el JSON
+    company_cols_json = [p['target_db_col'] for p in config['cleaning_map'].values() if p['target_table'] == 'companies']
     
-    # Contacts table (unique by clean_email)
-    contact_cols = [p['target_db_col'] for p in config['cleaning_map'].values() if p['target_table'] == 'contacts']
-    df_contacts = df_clean[['clean_email'] + [col for col in contact_cols if col != 'clean_email']].drop_duplicates(subset=['clean_email'])
+    # Definir las columnas calculadas (nuestra magia nueva)
+    generated_cols = [
+        'municipality_id', 'other_municipality', 
+        'industrial_park_id', 'other_industrial_park'
+    ]
     
-    # Responses table (transactional data)
-    response_cols = [p['target_db_col'] for p in config['cleaning_map'].values() if p['target_table'] == 'responses']
-    df_responses = df_clean[response_cols + ['clean_rfc', 'clean_email', 'additional_data']].copy().reset_index(drop=True)
-    df_responses['response_date'] = pd.to_datetime(df_responses['response_date'], errors='coerce')
+    # Juntar todo: clean_rfc + JSON + Generadas
+    all_desired_cols = ['clean_rfc'] + company_cols_json + generated_cols
+    
+    # --- EL FIX: DEDUPLICACIÓN ---
+    # Usamos dict.fromkeys para borrar duplicados MANTENIENDO el orden (set() desordena)
+    unique_cols = list(dict.fromkeys(all_desired_cols))
+    
+    # Verificar que existen en el DataFrame para que no truene si falta alguna
+    final_cols = [c for c in unique_cols if c in df_clean.columns]
+    
+    # Crear el DF final
+    df_companies = df_clean[final_cols].copy().drop_duplicates(subset=['clean_rfc'])
+    
+    
+    # --- 2. TABLA CONTACTS ---
+    contact_cols_json = [p['target_db_col'] for p in config['cleaning_map'].values() if p['target_table'] == 'contacts']
+    
+    # Mismo proceso de deduplicación para contactos (por seguridad)
+    all_contact_cols = ['clean_email'] + contact_cols_json
+    unique_contact_cols = list(dict.fromkeys(all_contact_cols))
+    final_contact_cols = [c for c in unique_contact_cols if c in df_clean.columns]
+    
+    df_contacts = df_clean[final_contact_cols].drop_duplicates(subset=['clean_email'])
+    
+    
+    # --- 3. TABLA RESPONSES ---
+    response_cols_json = [p['target_db_col'] for p in config['cleaning_map'].values() if p['target_table'] == 'responses']
+    
+    # Aquí agregamos las llaves foráneas para que la respuesta sepa de quién es
+    all_response_cols = response_cols_json + ['clean_rfc', 'clean_email', 'additional_data']
+    unique_response_cols = list(dict.fromkeys(all_response_cols))
+    final_response_cols = [c for c in unique_response_cols if c in df_clean.columns]
+
+    df_responses = df_clean[final_response_cols].copy().reset_index(drop=True)
+    
+    # Asegurar formato de fecha si existe la columna
+    if 'response_date' in df_responses.columns:
+        df_responses['response_date'] = pd.to_datetime(df_responses['response_date'], errors='coerce')
 
     return {'companies': df_companies, 'contacts': df_contacts, 'responses': df_responses}

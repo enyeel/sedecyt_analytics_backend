@@ -134,95 +134,120 @@ def get_companies_view():
     from app.core.connections.supabase_service import get_all_from
     import pandas as pd
     
-    # 1. Traer datos
-    # NOTA: Asegúrate de que 'municipality_catalog' sea el nombre real de tu tabla en Supabase
-    # (En tu diagrama vi 'catalogo_municipios_inegi', usa el nombre que tengas en la BD)
-    companies = get_all_from('companies')
+    # 1. Traer datos (Asegúrate de usar los nombres reales de tus tablas)
+    companies = get_all_from('companies') # o 'dim_companies' si ya renombraste
     mun_catalog = get_all_from('municipality_catalog') 
+    park_catalog = get_all_from('industrial_parks_catalog') # <--- NUEVO
     cert_catalog = get_all_from('certifications_catalog')
     
     if not companies: return jsonify([]), 200
 
     df_comp = pd.DataFrame(companies)
     df_mun = pd.DataFrame(mun_catalog) if mun_catalog else pd.DataFrame()
+    df_park = pd.DataFrame(park_catalog) if park_catalog else pd.DataFrame() # <--- NUEVO
     df_cert = pd.DataFrame(cert_catalog) if cert_catalog else pd.DataFrame()
     
-    # 2. Mapeos
+    # 2. Mapeos (Hash Maps para búsqueda O(1))
     mun_map = {}
     if not df_mun.empty:
-        # Asegúrate de que las columnas 'id' y 'nombre_municipio' coincidan con tu tabla
         mun_map = dict(zip(df_mun['id'], df_mun['municipality_name']))
         
+    park_map = {} # <--- NUEVO
+    if not df_park.empty:
+        # Asegúrate que la columna sea 'park_name' o 'nombre_parque' según tu BD
+        park_map = dict(zip(df_park['id'], df_park['park_name']))
+
     cert_map = {}
     if not df_cert.empty:
         cert_map = dict(zip(df_cert['id'].astype(str), df_cert['acronym']))
 
-    # 3. Transformaciones (COALESCE Municipio)
-    def get_municipality(row):
-        if pd.notnull(row.get('municipality_id')):
-            mun_name = mun_map.get(row['municipality_id'])
-            if mun_name: return mun_name
+    # 3. Lógica Modularizada (La función Genérica "COALESCE" en Python)
+    def resolve_location(row, id_col_name, other_col_name, catalog_map):
+        """
+        Intenta obtener el nombre del catálogo usando el ID.
+        Si falla, usa el texto libre de la columna 'other'.
+        """
+        # A. Intentar por ID
+        location_id = row.get(id_col_name)
+        if pd.notnull(location_id):
+            # El ID puede venir como float en pandas, aseguramos int
+            try:
+                name = catalog_map.get(int(location_id)) or catalog_map.get(location_id)
+                if name: return name
+            except (ValueError, TypeError):
+                pass # Si falla la conversión, seguimos
         
-        other = row.get('other_municipality')
-        if other and str(other).strip(): return str(other)
-        return "Sin Dato"
+        # B. Intentar por Texto Libre
+        other_text = row.get(other_col_name)
+        if other_text and str(other_text).strip() not in ['None', 'nan', '']: 
+            return str(other_text).strip()
+            
+        return "No especificado"
 
     # 4. Transformaciones (Certificaciones Array)
     def get_certs_string(cert_ids):
-        if not isinstance(cert_ids, list) or not cert_ids: return ""
+        if not isinstance(cert_ids, list) or not cert_ids: return "-"
         names = [cert_map.get(str(cid), str(cid)) for cid in cert_ids]
         return ", ".join(names)
 
-    # Aplicamos
-    df_comp['Municipio'] = df_comp.apply(get_municipality, axis=1)
+    # --- APLICACIÓN DE LA LÓGICA ---
     
-    if 'certification_ids' in df_comp.columns:
-        df_comp['Certificaciones (Limpias)'] = df_comp['certification_ids'].apply(get_certs_string)
-    else:
-        df_comp['Certificaciones (Limpias)'] = "-"
+    # Aplicamos la función genérica para MUNICIPIOS
+    df_comp['Municipio_Final'] = df_comp.apply(
+        lambda row: resolve_location(row, 'municipality_id', 'other_municipality', mun_map), 
+        axis=1
+    )
 
-    # 5. 🔥 SELECCIÓN FINAL DE COLUMNAS (Aquí metemos las nuevas)
-    # El orden en esta lista es el orden en que aparecerán en la tabla
-    df_final = df_comp[[
-        'clean_rfc', 
-        'clean_legal_name',   # <--- NUEVO
-        'trade_name', 
-        'sector', 
-        'main_activity',      # <--- NUEVO
-        'full_address',       # <--- NUEVO
-        'postal_code',        # <--- NUEVO
-        'industrial_park',    # <--- NUEVO
-        'Municipio', 
-        'employee_count', 
-        'procurement_tier', 
-        'Certificaciones (Limpias)'
-    ]].rename(columns={
-        'clean_rfc': 'RFC',
-        'clean_legal_name': 'Razón Social',       # Rename bonito
-        'trade_name': 'Nombre Comercial',
-        'sector': 'Sector',
-        'main_activity': 'Actividad Principal',   # Rename bonito
-        'full_address': 'Dirección',              # Rename bonito
-        'postal_code': 'C.P.',                    # Rename bonito
-        'industrial_park': 'Parque Industrial',   # Rename bonito
-        'employee_count': 'Empleados',
-        'procurement_tier': 'Nivel Proveeduría'
-    })
+    # Aplicamos la función genérica para PARQUES
+    df_comp['Parque_Final'] = df_comp.apply(
+        lambda row: resolve_location(row, 'industrial_park_id', 'other_industrial_park', park_map), 
+        axis=1
+    )
     
+    # Certificaciones
+    if 'certification_ids' in df_comp.columns:
+        df_comp['Certificaciones_Final'] = df_comp['certification_ids'].apply(get_certs_string)
+    else:
+        df_comp['Certificaciones_Final'] = "-"
+
+    # 5. SELECCIÓN Y RENOMBRAMIENTO FINAL
+    # Definimos el diccionario de renombramiento para mantenerlo limpio
+    rename_map = {
+        'clean_rfc': 'RFC',
+        'trade_name': 'Nombre Comercial', # Si usas trade_name
+        # 'clean_legal_name': 'Razón Social', # Descomenta si tienes esta columna
+        'sector': 'Sector',
+        'main_activity': 'Actividad Principal',
+        'full_address': 'Dirección',
+        'postal_code': 'C.P.',
+        'Parque_Final': 'Parque Industrial',  # <--- Usamos la columna calculada
+        'Municipio_Final': 'Municipio',       # <--- Usamos la columna calculada
+        'employee_count': 'Empleados',
+        'procurement_tier': 'Nivel Proveeduría',
+        'Certificaciones_Final': 'Certificaciones'
+    }
+
+    # Filtramos solo las columnas que existen para evitar KeyError
+    available_cols = [c for c in rename_map.keys() if c in df_comp.columns]
+    
+    df_final = df_comp[available_cols].rename(columns=rename_map)
     df_final = df_final.fillna('-')
     
-    column_order = [
-        'RFC', 'Razón Social', 'Nombre Comercial', 'Sector', 
-        'Actividad Principal', 'Dirección', 'C.P.', 'Parque Industrial',
-        'Municipio', 'Empleados', 'Nivel Proveeduría', 'Certificaciones (Limpias)'
+    # Definimos el orden deseado para el frontend
+    desired_order = [
+        'RFC', 'Nombre Comercial', 'Sector', 'Actividad Principal',
+        'Dirección', 'C.P.', 'Parque Industrial', 'Municipio', 
+        'Empleados', 'Nivel Proveeduría', 'Certificaciones'
     ]
-    
-    # Enviamos un objeto con data y metadata
+    # Intersección para ordenar solo lo que existe
+    final_order = [c for c in desired_order if c in df_final.columns]
+    df_final = df_final[final_order]
+
     return jsonify({
         "data": df_final.to_dict(orient='records'),
-        "columns": column_order
+        "columns": final_order
     }), 200
-
+    
 # --- VISTA 2: CONTACTOS LIMPIOS ---
 @api_bp.route("/data/contacts-view", methods=['GET'])
 @token_required

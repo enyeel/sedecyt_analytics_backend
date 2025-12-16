@@ -1,8 +1,9 @@
 import re
 import pandas as pd
-from typing import Union, List, Dict
+import unicodedata
+from typing import Tuple, Dict, List, Optional, Union
 from rapidfuzz import process, fuzz 
-from app.core.connections.supabase_service import get_municipalities_map, get_data_from_table
+from app.core.connections.supabase_service import get_data_from_table
 
 # --- VARIABLES GLOBALES (CACHÉ) ---
 # Esta variable guardará el catálogo en memoria para no llamar a la BD mil veces
@@ -480,110 +481,73 @@ def extract_certifications_acronyms(text: str) -> List[str]:
                 
     return sorted(list(found_acronyms))
 
-# --- FUNCIONES DE NORMALIZACIÓN DE MUNICIPIOS (Nivel 3) ---
+# --- FUNCIONES DE NORMALIZACIÓN INTELIGENTE (Nivel 3) ---
 
-# --- CONSTANTES DE RUIDO ---
-STATE_NOISE = [
-    ' AGUASCALIENTES', 'AGUASCALIENTES', ' AGS', 
-    ' GTO', ' GUANAJUATO',
-    ' EDO MEX', ' ESTADO DE MEXICO', ' MEXICO',
-    ' JAL', ' JALISCO',
-    ' ZAC', ' ZACATECAS',
-    ' CDMX', ' CIUDAD DE MEXICO'
-]
+# --- HELPER PARA QUITAR ACENTOS ---
+def normalize_text(text: str) -> str:
+    """
+    Convierte 'MÉXICO, Ñuñoa & Güero' -> 'MEXICO, Nunoa & Guero'
+    Elimina diacríticos pero mantiene el texto ASCII limpio.
+    """
+    if not text: return ""
+    # Normaliza a forma NFKD (separa letras de tildes) y codifica a ASCII ignorando errores
+    return (unicodedata.normalize('NFKD', str(text))
+            .encode('ASCII', 'ignore')
+            .decode('utf-8'))
 
-ACCENT_MAP = str.maketrans("ÁÉÍÓÚÜÑ", "AEIOUUN")
-
-CACHED_MUNICIPALITIES_MAP = None
-
-def _get_municipality_map_reference():
-    global CACHED_MUNICIPALITIES_MAP
-    if CACHED_MUNICIPALITIES_MAP is None:
-        print("⏳ Cargando mapa de IDs de municipios...")
-        CACHED_MUNICIPALITIES_MAP = get_municipalities_map()
-    return CACHED_MUNICIPALITIES_MAP
-
-def clean_municipality_to_id(text: Union[str, float]) -> Union[int, None]:
-    if pd.isna(text) or str(text).strip() == '':
-        return None
-
-    # 1. LIMPIEZA NUCLEAR (Debe ser idéntica a la del servicio)
-    text_obj = str(text).upper().translate(ACCENT_MAP)
-    dirty_name = " ".join(text_obj.split())  # Mata espacios raros
-    dirty_name = dirty_name.replace('.', '').replace(',', '').replace('/', '')
-
-    # 2. Quitar ruido de estado
-    clean_try = dirty_name
-    STATE_NOISE = [' AGUASCALIENTES', 'AGUASCALIENTES', ' AGS', ' EDO MEX']
-    for noise in STATE_NOISE:
-        if noise in clean_try:
-            # OJO: Al quitar ruido, pueden quedar espacios dobles de nuevo. 
-            # Volvemos a normalizar espacios tras el reemplazo.
-            temp_clean = clean_try.replace(noise, '')
-            clean_try = " ".join(temp_clean.split())
-
-    # Restaurar si borramos todo
-    if (len(clean_try) < 4) and "AGUASCALIENTES" in dirty_name:
-        clean_try = "AGUASCALIENTES"
+# --- LA FUNCIÓN MAESTRA ---
+def smart_catalog_match(
+    dirty_text: str, 
+    map_keywords_to_id: Dict[str, int], 
+    fuzzy_candidates: List[str], 
+    threshold: int = 87,
+    extra_removals: List[str] = None
+) -> Tuple[Optional[int], Optional[str]]:
     
-    target_name = clean_try if clean_try else dirty_name
+    if not dirty_text or pd.isna(dirty_text):
+        return None, None
 
-    # 3. BUSCAR EN EL MAPA
-    mun_map = _get_municipality_map_reference()
+    # PASO 1: UPPERCASE + QUITAR ACENTOS (La joya que faltaba)
+    clean_text = normalize_text(str(dirty_text).upper().strip())
     
-    # A. Match Exacto
-    if target_name in mun_map:
-        return mun_map[target_name]
+    # PASO 2: QUITAR PALABRAS DE RUIDO (¡CON INTELIGENCIA!)
+    if extra_removals:
+        for noise in extra_removals:
+            noise_clean = normalize_text(noise)
+            
+            # Verificamos si la palabra de ruido está en el texto
+            if noise_clean in clean_text:
+                # Simulamos la eliminación en una variable temporal
+                temp_text = clean_text.replace(noise_clean, '').strip()
+                # Limpiamos espacios dobles que pudieran quedar en el temporal
+                temp_text = re.sub(r'\s+', ' ', temp_text).strip()
+                
+                # --- LA REGLA DE ORO ---
+                # Si lo que queda tiene más de 2 letras, asumimos que quitamos ruido exitosamente.
+                # Si queda vacío o muy corto (0, 1 o 2 letras), significa que borramos el dato principal.
+                # Ejemplo 1: "JESUS MARIA AGS" -> Quita AGS -> Queda "JESUS MARIA" (>2) -> ACEPTAR
+                # Ejemplo 2: "AGUASCALIENTES" -> Quita AGUASCALIENTES -> Queda "" (0) -> RECHAZAR (No hacemos nada)
+                if len(temp_text) > 2:
+                    clean_text = temp_text
 
-    # B. Fuzzy Match
-    valid_names = list(mun_map.keys())
-    result = process.extractOne(target_name, valid_names, scorer=fuzz.token_sort_ratio)
+    # PASO 3: LIMPIEZA DE PUNTUACIÓN
+    clean_text = clean_text.replace('.', '').replace(',', '').replace('/', '').replace('-', ' ').strip()
+    clean_text = re.sub(r'\s+', ' ', clean_text)
     
-    if result:
-        best_match, score, _ = result
-        if score >= 90:
-            return mun_map[best_match]
+    # Validar vacíos
+    if not clean_text or clean_text in ['NO', 'NAN', 'NINGUNO', 'NA', '0']:
+        return None, None
 
-    return None
+    # --- MATCH EXACTO ---
+    if clean_text in map_keywords_to_id:
+        return map_keywords_to_id[clean_text], None
 
-def standarize_park(dirty_name):
-    parques_db = get_data_from_table('industrial_parks_catalog', 'id,park_name,keywords')
-    PARK_TO_ID_MAP = {}
-    FUZZY_CANDIDATES = []
+    # --- FUZZY MATCH ---
+    best_match = process.extractOne(clean_text, fuzzy_candidates, scorer=fuzz.token_sort_ratio)
+    
+    if best_match:
+        match_str, score = best_match[0], best_match[1]
+        if score >= threshold:
+            return map_keywords_to_id[match_str], None
 
-    for item in parques_db:
-        park_id = item['id']
-        nombre_oficial = item['park_name']
-
-        key_oficial = str(nombre_oficial).upper().strip()
-        PARK_TO_ID_MAP[key_oficial] = park_id
-        FUZZY_CANDIDATES.append(key_oficial)
-
-        keywords = item.get('keywords')
-        if keywords:
-            for kw in keywords:
-                key_kw = str(kw).upper().strip()
-                PARK_TO_ID_MAP[key_kw] = park_id
-                FUZZY_CANDIDATES.append(key_kw)
-
-    if not dirty_name or pd.isna(dirty_name):   #siesta vacio regrasa none
-      return None
-
-    # 1. ESTANDARIZACIÓN Y LIMPIEZA DE PUNTUACIÓN
-    dirty_name = str(dirty_name).upper().strip()
-    dirty_name = dirty_name.replace('.', '').replace(',', '').replace('/', '')
-
-    if dirty_name in ['NO', 'NAN', 'NINGUNO', 'NA', '0', "", ".", "-"]:
-        return None
-
-    if dirty_name in PARK_TO_ID_MAP:              #siesta en las keyywords lo regresa limpiesito
-        return PARK_TO_ID_MAP[dirty_name]
-
-    # 4. FUZZY MATCHING
-    best_match_str, score = process.extractOne(dirty_name, FUZZY_CANDIDATES, scorer=fuzz.token_sort_ratio)  #ahora si los que quedan se pone a compararlos con el catalog
-
-    # 5. APLICAR REGLA DE CONFIANZA
-    if score >= 87:
-        return PARK_TO_ID_MAP [best_match_str]
-    else:
-        return dirty_name
+    return None, clean_text
