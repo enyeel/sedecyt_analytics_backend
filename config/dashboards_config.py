@@ -89,22 +89,23 @@ DASHBOARDS_CONFIG = [
                     "aggregation": "raw"            
                 }
             },
+            # 2. Top 10 Parques Industriales (YA ESTANDARIZADO WUUU)
             {
-                # --------- DESACTIVADO por ahora ----------------
-                "slug": "top-10-industrial-parks",
-                "is_active": False, 
+                "slug": "top-10-industrial-parks-density",
                 "data_source_key": "companies",
                 "analysis_type": analyze_top_ranking,
                 "formatter_params": {
-                    "title": "Top 10: Parques con Mayor Densidad",
-                    "chart_type": "pie", 
+                    "title": "Top 10: Parques con Más Empresas", 
+                    "chart_type": "bar", # Cambiado de 'pie' a 'bar'
                     "data_label": "Empresas Instaladas"
                 },
                 "params": {
                     "label_col": "industrial_park", 
-                    "value_col": None,
                     "limit": 10,
-                    "aggregation": "count"
+                    "aggregation": "count",
+                    "exclude_value": "SIN PARQUE"
+                    # Opcional: Filtrar 'SIN PARQUE' si quieres ver solo parques formales
+                    # "filter_col": "industrial_park", "filter_neq": "SIN PARQUE" (requeriría ajuste en analysis_functions)
                 }
             },
             # 3. Top Municipios por Fuerza Laboral (Ranking Agrupado - Suma)
@@ -161,7 +162,47 @@ DASHBOARDS_CONFIG = [
                     "aggregation": "count"
                 }
             },
+            
+            # PROPÓSITO: Alerta de infraestructura.
+            {
+                "slug": "top-5-parks-expansion",
+                "is_active": False,
+                "data_source_key": "responses", # Necesita el merge con companies que hicimos en run.py
+                "analysis_type": analyze_top_ranking,
+                "formatter_params": {
+                    "title": "Focos de Crecimiento (Top 5 Parques)", 
+                    "chart_type": "pie", # Aquí sí se vale Dona porque es Top 5
+                    "data_label": "Empresas expandiéndose"
+                },
+                "params": {
+                    "label_col": "industrial_park", # Viene del merge en run.py
+                    "filter_col": "has_expansion_plans",
+                    "filter_value": True,
+                    "limit": 5,
+                    "aggregation": "count",
+                }
+            },
 
+            # 3. Top 5 Parques por Fuerza Laboral (NUEVO)
+            # PROPÓSITO: Movilidad y Transporte.
+            {
+                "slug": "top-5-parks-workforce",
+                "is_active": True,
+                "data_source_key": "companies",
+                "analysis_type": analyze_top_ranking,
+                "formatter_params": {
+                    "title": "Mayores Hubs Laborales (Por Empleados)", 
+                    "chart_type": "bar",
+                    "data_label": "Total Empleados"
+                },
+                "params": {
+                    "label_col": "industrial_park", 
+                    "value_col": "employee_count",
+                    "limit": 5,
+                    "aggregation": "sum", # Sumar empleados, no contar empresas
+                    "exclude_value": "SIN PARQUE"
+                }
+            },
             # CRUCE 3: Sector vs Expansión (FILTRO + CONTEO)
             {
                 "slug": "top-sectors-expansion",

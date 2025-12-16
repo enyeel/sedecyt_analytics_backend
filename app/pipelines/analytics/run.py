@@ -8,20 +8,53 @@ from config.dashboards_config import DASHBOARDS_CONFIG
 #  This function takes raw data and formats it into a Chart.js object.
 # ==============================================================================
 
-def _format_chart_object(title: str, chart_type: str, data_label: str, analysis_result: dict):
-    """Formats the result from an analysis function into a Chart.js compatible dictionary."""
+# En app/pipelines/analytics/run.py
+
+# Modifica la definición de la función para aceptar **kwargs
+def _format_chart_object(title, chart_type, data_label, analysis_result, **kwargs):
+    """
+    Formatea el resultado del análisis en la estructura JSON que espera el Frontend.
+    Acepta argumentos extra (kwargs) como 'indexAxis' y los mete en 'options'.
+    """
     if not analysis_result:
         return None
+        
+    chart_data = {
+        "labels": analysis_result["labels"],
+        "datasets": [
+            {
+                "label": data_label,
+                "data": analysis_result["values"],
+                # Colores por defecto (el frontend luego puede sobreescribirlos o usar temas)
+                "backgroundColor": [
+                    "rgba(54, 162, 235, 0.6)",
+                    "rgba(255, 99, 132, 0.6)",
+                    "rgba(75, 192, 192, 0.6)",
+                    "rgba(255, 206, 86, 0.6)",
+                    "rgba(153, 102, 255, 0.6)",
+                    "rgba(255, 159, 64, 0.6)"
+                ] * 2, # Repetimos colores por si hay muchas barras
+                "borderColor": "rgba(255, 255, 255, 1)",
+                "borderWidth": 1
+            }
+        ]
+    }
     
-    # This is a simplified version of your _generate_grouped_chart's formatting part
-    return {
+    # Construimos el objeto final
+    final_object = {
         "title": title,
         "type": chart_type,
-        "data": {
-            "labels": analysis_result["labels"],
-            "datasets": [{"label": data_label, "data": analysis_result["values"]}],
-        },
+        "data": chart_data,
+        "options": {} # Inicializamos opciones vacías
     }
+
+    # ¡LA MAGIA! 
+    # Si llegan argumentos extra (como indexAxis: 'y'), los metemos en 'options'
+    # para que Chart.js los lea en el frontend.
+    if kwargs:
+        final_object["options"].update(kwargs)
+
+    return final_object
 
 def run_analytics_etl():
     print("--- Starting Analytics Update Process ---")
@@ -35,11 +68,13 @@ def run_analytics_etl():
     
     # [NUEVO] Traemos el catálogo de municipios para traducir los IDs
     df_mun_catalog = pd.DataFrame(supabase_service.get_all_from('municipality_catalog'))
+    df_park_catalog = pd.DataFrame(supabase_service.get_all_from('industrial_parks_catalog'))
 
     print(f"  - Fetched {len(df_companies)} company records.")
     print(f"  - Fetched {len(df_mun_catalog)} municipalities.")
 
     # --- 1.5. ENRICHMENT (Corrección de colisión de nombres) ---
+    # A) Lógica de Municipios
     if 'municipality_id' in df_companies.columns and not df_mun_catalog.empty:
         print("  - Joining companies with municipality catalog...")
         
@@ -48,13 +83,35 @@ def run_analytics_etl():
             left_on='municipality_id',
             right_on='id',
             how='left',
-            suffixes=('', '_mun')  # <--- ¡ESTA ES LA CLAVE!
+            suffixes=('', '_mun')
         )
         # Explicación: 
         # '' (vacío) -> Mantiene 'id' de companies tal cual.
         # '_mun' -> Renombra el 'id' del catálogo a 'id_mun'.
         
         df_companies.rename(columns={'municipality_name': 'municipality'}, inplace=True)
+    
+    # B) Lógica de Parques Industriales
+    # Asumimos que tu columna de FK en companies se llama 'industrial_park_id'
+    if 'industrial_park_id' in df_companies.columns and not df_park_catalog.empty:
+        print("  - Joining companies with industrial parks catalog...")
+        
+        # Merge: companies.industrial_park_id <-> catalog.id
+        df_companies = df_companies.merge(
+            df_park_catalog[['id', 'park_name']], # Solo necesitamos el nombre
+            left_on='industrial_park_id',
+            right_on='id',
+            how='left',
+            suffixes=('', '_park') # Evita choque de IDs con el merge de municipios
+        )
+        
+        # SOBRESCRIBIMOS la columna vieja 'industrial_park' con el nombre limpio
+        # Si no tiene ID (nulo), le ponemos "SIN PARQUE"
+        df_companies['industrial_park'] = df_companies['park_name'].fillna("SIN PARQUE")
+        
+        # Opcional: Si quieres considerar la columna de "otros" manuales cuando no hay ID
+        # if 'other_industrial_park' in df_companies.columns:
+        #     df_companies['industrial_park'] = df_companies['industrial_park'].replace("SIN PARQUE", df_companies['other_industrial_park'])
 
     # --- TRUCO DE ANALISTA SENIOR (Merge Companies -> Responses) ---
     if not df_companies.empty and not df_responses.empty:

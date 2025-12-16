@@ -49,9 +49,10 @@ def analyze_continuous_binned(df: pd.DataFrame, column: str, bins: int = 4, labe
 
 def analyze_top_ranking(df: pd.DataFrame, label_col: str, value_col: str = None, 
                         limit: int = 10, aggregation: str = 'count', 
-                        filter_col: str = None, filter_value = None, **kwargs):
+                        filter_col: str = None, filter_value = None, 
+                        exclude_value = None, **kwargs): # <--- NUEVO PARÁMETRO
     """
-    Genera un Top N ranking con capacidades de filtrado y agregación.
+    Genera un Top N ranking con capacidades de filtrado y exclusión.
     """
     # 0. FILTRADO PREVIO (La clave para los cruces)
     if filter_col and filter_col in df.columns:
@@ -59,6 +60,10 @@ def analyze_top_ranking(df: pd.DataFrame, label_col: str, value_col: str = None,
             df = df[df[filter_col] == True]
         elif filter_value is not None: # Para texto (ej. Sector = 'Automotriz')
             df = df[df[filter_col] == filter_value]
+    
+    if exclude_value is not None:
+        # Filtramos todo lo que NO SEA igual al valor excluido
+        df = df[df[label_col] != exclude_value]
     
     if df.empty or label_col not in df.columns:
         return {"labels": [], "values": []}
