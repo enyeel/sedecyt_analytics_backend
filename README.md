@@ -320,8 +320,6 @@ This backend is designed to work seamlessly with the [SEDECyT Analytics Frontend
 Interested in implementing a similar solution for your organization?
 
 * 📧 **Email:** [anjel.hdz22@gmail.com](mailto:anjel.hdz22@gmail.com)
-* 💼 **LinkedIn:** [Your LinkedIn Profile]
-* 🌐 **Portfolio:** [Your Portfolio Website]
 
 ---
 
