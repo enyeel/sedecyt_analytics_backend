@@ -1,259 +1,309 @@
-# SEDECyT Analytics - Backend API
+<div align="center">
 
-![Status: Production](https://img.shields.io/badge/status-production-green)
-![Platform: Google Cloud Run](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-blue)
-![Database: Supabase](https://img.shields.io/badge/Database-Supabase%20(Postgres)-green)
+  <img src="docs/images/backend.png" alt="SEDECyT Analytics Backend - Automated Economic Data Pipeline" width="100%">
+  
+  <br/>
+  
+  <h1>🚀 SEDECyT Analytics - Backend API</h1>
+  
+  <p>
+    <strong>Automated ETL Pipeline that transforms manual economic reporting into real-time, data-driven insights</strong>
+  </p>
+  
+  <!-- BADGES -->
+  <a href="https://github.com/enyeel/sedecyt_analytics_backend">
+    <img src="https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge" alt="Status">
+  </a>
+  <img src="https://img.shields.io/badge/Platform-Google_Cloud_Run-blue?style=for-the-badge" alt="Platform">
+  <img src="https://img.shields.io/badge/Database-Supabase-green?style=for-the-badge" alt="Database">
+  <img src="https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python" alt="Python">
+  
+</div>
 
-This is the serverless backend API for **SEDECyT Analytics**, a modern data platform designed to automate economic analysis for the Secretariat of Economic Development, Science, and Technology (SEDECyT) of Aguascalientes.
+---
 
-This service is responsible for the automated extraction, cleaning, and storage of economic data, serving it via a high-speed API to its decoupled frontend dashboard.
+## 💡 The Problem
 
-* **View the Backend:** `sedecyt_analytics_backend` (This repo)
-* **View the Frontend:** [sedecyt_analytics_frontend](https://github.com/enyeel/sedecyt_analytics_frontend)
-***
+Currently, SEDECyT's process for generating key economic reports is **manual, slow, and error-prone**:
 
-## The Problem: Why This Project Exists
+* 📝 **Manual Data Entry:** Data is consolidated by hand from various sources (Google Forms, spreadsheets, etc.) into a central Excel file
+* 📊 **Static Reports:** This data is then manually transferred to PowerPoint presentations for analysis
+* ⏰ **Inefficiency:** This workflow consumes **dozens of hours per month**, increases the risk of human error, and makes **real-time data analysis impossible**
 
-Currently, SEDECyT's process for generating key economic reports is manual, slow, and error-prone:
-1.  **Manual Data Entry:** Data is consolidated by hand from various sources (Google Forms, spreadsheets, etc.) into a central Excel file.
-2.  **Static Reports:** This data is then manually transferred to PowerPoint presentations for analysis.
-3.  **Inefficiency:** This workflow consumes dozens of hours, increases the risk of human error, and makes real-time data analysis impossible.
+**The Cost:** Government staff spend valuable time on repetitive data entry instead of strategic analysis, and decision-makers receive outdated information.
 
-## The Solution: An Automated Data Pipeline
+---
 
-This backend solves the problem by implementing a **fully automated, modular ETL (Extract, Transform, Load)** pipeline that powers a "master truth table" and generates pre-calculated analytics dashboards.
+## 🛠️ The Solution
 
-1.  **Extract:** A Python service connects to Google Sheets and other sources to pull raw, new data.
-2.  **Transform:** The raw data is run through a modular, production-ready cleaning pipeline that normalizes, validates, and enriches every column (e.g., standardizing RFCs, validating phone numbers, fuzzy-matching municipalities and industrial parks, processing certifications).
-3.  **Load:** The clean, analysis-ready data is loaded into a **Supabase (Postgres)** database with proper foreign key relationships.
-4.  **Analytics:** A separate analytics pipeline pre-calculates chart data and stores it in optimized format for instant dashboard rendering.
+This backend implements a **fully automated, production-ready ETL pipeline** that eliminates manual work and delivers instant insights:
 
-The frontend dashboard then queries this clean, fast, and reliable "truth table" instead of a messy spreadsheet, allowing for instant, dynamic visualizations.
+1. **⚡ Automated Extraction:** Connects to Google Sheets and pulls new data automatically
+2. **🧹 Intelligent Cleaning:** Normalizes RFCs, validates phones, matches municipalities with fuzzy logic, processes certifications
+3. **💾 Smart Storage:** Loads clean data into Supabase with proper relationships and maintains full historical tracking
+4. **📈 Pre-calculated Analytics:** Generates dashboard charts automatically, ready for instant visualization
 
-***
+**The Result:** What used to take **days of manual work** now happens **automatically in minutes**, with zero human error and real-time updates.
 
-## Tech Stack
+---
 
-* **Backend:** **Python 3.11**
-* **Framework:** **Flask** with Blueprint architecture
-* **Containerization:** **Docker** with Gunicorn
-* **Host Platform:** **Google Cloud Run** (Serverless)
-* **Database:** **Supabase** (PostgreSQL)
-* **Key Libraries:** 
-  * **Pandas** (for data transformation)
-  * **GSpread** (for Google Sheets integration)
-  * **Supabase Python Client** (for database operations)
-  * **RapidFuzz** (for fuzzy string matching)
-  * **Unicode normalization** (for text cleaning)
-* **Database Structure:** Leverages **`jsonb`** data types in Postgres to flexibly store highly variable survey data without schema changes.
+## 📺 Demo / Preview
 
-***
+<!-- 
+  📸 MULTIMEDIA PLACEHOLDER - DEMO GIF/SCREENSHOTS
+  =================================================
+  INSTRUCCIONES PARA CREAR EL DEMO:
+  
+  OPCIÓN 1: GIF Animado (Recomendado)
+  ------------------------------------
+  1. Herramientas:
+     - ScreenToGif (Windows)
+     - LICEcap (Mac/Windows)
+     - OBS Studio + conversor a GIF
+     
+  2. Contenido a mostrar:
+     - Terminal ejecutando el ETL pipeline
+     - Logs mostrando el proceso de limpieza
+     - Resultado final en Supabase (captura de pantalla)
+     - API respondiendo con datos limpios
+     
+  3. Duración: 15-30 segundos (loop infinito)
+  4. Dimensiones: 800-1200px de ancho
+  5. Sube a: /docs/images/demo-etl.gif
+     
+  OPCIÓN 2: Screenshots en Grid
+  -----------------------------
+  1. Capturas a incluir:
+     - Logs del ETL mostrando estadísticas
+     - Supabase dashboard con datos limpios
+     - API response en Postman/Thunder Client
+     - Estructura de datos antes/después
+     
+  2. Crea un grid con 2-4 imágenes
+  3. Usa herramientas como:
+     - Canva para crear el grid
+     - Figma para diseño profesional
+     
+  4. Sube a: /docs/images/etl-screenshots.png
+     
+  REEMPLAZA ESTA SECCIÓN CON:
+  ![ETL Pipeline Demo](docs/images/demo-etl.gif)
+  
+  O para screenshots:
+  <div align="center">
+    <img src="docs/images/etl-screenshots.png" alt="ETL Pipeline Screenshots" width="90%">
+  </div>
+-->
 
-## Project Status: ✅ Production Ready
+<div align="center">
+  <p><em>📸 Demo video/screenshots will be added here</em></p>
+  <p><small>See instructions in the code comments above</small></p>
+</div>
 
-This project is **fully deployed and operational** as part of a university internship program.
+---
 
-* **Core Architecture:** The decoupled two-repo structure is complete and production-ready.
-* **Deployment:** The backend is successfully containerized with Docker and deployed to Google Cloud Run.
-* **Database:** The Supabase Postgres schema is fully defined with proper relationships and indexes.
-* **ETL Pipeline:** The data transformation pipeline is **100% complete** and modularized into separate components:
-  * Data extraction from Google Sheets
-  * Comprehensive data cleaning and normalization
-  * Catalog matching (municipalities, industrial parks, certifications)
-  * Data processing and entity separation (companies, contacts, responses)
-  * Historical data tracking vs. latest snapshot
-* **Analytics Pipeline:** Pre-calculation of dashboard charts with configurable analysis functions.
-* **API:** All endpoints are implemented, tested, and protected with Supabase Auth token validation.
+## ✨ Key Features
 
-***
+* ⚡ **Speed:** Processes and cleans thousands of records in minutes, reducing report generation time from **days to seconds**
+* 🎯 **Accuracy:** Intelligent fuzzy matching for municipalities and industrial parks, eliminating manual data entry errors
+* 📊 **Complete History:** Maintains both the latest snapshot and full response history for temporal analysis
+* 🔄 **Full Automation:** Completely automated ETL pipeline that can run on-demand or be scheduled
+* 🛡️ **Robust Validation:** Normalizes Mexican RFCs, validates phones (E.164), cleans emails, standardizes addresses
+* 📈 **Pre-calculated Analytics:** Automatically generates chart data, ready for instant dashboard visualization
+* 🔐 **Security:** Token-based Supabase authentication, protected endpoints, CORS configured
 
-## 📂 Project Structure 
+---
 
-The project follows a clean, modular architecture with clear separation of concerns:
+## 🏗️ Architecture
 
-```bash
-.
-├── app/
-│   ├── __init__.py              # Flask app factory
-│   ├── api/
-│   │   ├── routes.py            # All API endpoints (Blueprints)
-│   │   └── auth_decorator.py    # Token-based authentication middleware
-│   ├── core/
-│   │   └── connections/
-│   │       ├── supabase_service.py      # Supabase client & data operations
-│   │       └── google_sheets_service.py # Google Sheets integration
-│   ├── pipelines/
-│   │   ├── etl/
-│   │   │   ├── run.py           # Main ETL orchestrator
-│   │   │   ├── cleaning.py      # Data cleaning functions (RFC, email, phone, etc.)
-│   │   │   ├── processing.py    # Data processing & entity separation
-│   │   │   └── certifications.py # Certification analysis & matching
-│   │   └── analytics/
-│   │       ├── run.py           # Analytics pipeline orchestrator
-│   │       ├── analysis_functions.py # Chart data calculation functions
-│   │       └── update_chart_visibility.py # Chart visibility management
-│   ├── services/
-│   │   └── dashboard_service.py # Dashboard data retrieval service
-│   └── data/
-│       ├── inputs/              # Mock data for testing
-│       └── outputs/             # ETL output files (debug)
-├── config/
-│   ├── dashboards_config.py    # Dashboard & chart configuration
-│   ├── certifications_catalog_data.py # Certifications catalog
-│   ├── cleaning_map.json       # Column mapping configuration
-│   └── sheets_credentials.py   # Google Sheets credentials config
-├── Dockerfile
-├── requirements.txt
-├── run.py                       # Application entry point
-└── README.md
+<!-- 
+  📊 MULTIMEDIA PLACEHOLDER - DIAGRAMA DE ARQUITECTURA
+  =====================================================
+  INSTRUCCIONES PARA CREAR EL DIAGRAMA:
+  
+  OPCIÓN 1: Mermaid.js (Recomendado - se renderiza en GitHub)
+  -----------------------------------------------------------
+  Puedes usar este código Mermaid directamente en el README:
+  
+  ```mermaid
+  graph LR
+    A[Google Sheets] -->|Extract| B[ETL Pipeline]
+    B -->|Transform| C[Data Cleaning]
+    C -->|Load| D[Supabase DB]
+    D -->|Query| E[Analytics Pipeline]
+    E -->|Pre-calc| F[Charts Data]
+    D -->|API| G[Frontend Dashboard]
+    F -->|API| G
+  ```
+  
+  OPCIÓN 2: Imagen Externa
+  ------------------------
+  1. Herramientas:
+     - Draw.io (diagrams.net)
+     - Lucidchart
+     - Figma
+     
+  2. Elementos a incluir:
+     - Google Sheets (fuente)
+     - ETL Pipeline (proceso)
+     - Supabase (almacenamiento)
+     - Analytics Pipeline (cálculos)
+     - API (servicio)
+     - Frontend (consumidor)
+     
+  3. Estilo: Moderno, con colores de marca
+  4. Sube a: /docs/images/architecture-diagram.png
+     
+  REEMPLAZA ESTA SECCIÓN CON EL DIAGRAMA
+-->
+
+```mermaid
+graph LR
+    A[Google Sheets] -->|Extract| B[ETL Pipeline]
+    B -->|Transform| C[Data Cleaning]
+    C -->|Load| D[Supabase DB]
+    D -->|Query| E[Analytics Pipeline]
+    E -->|Pre-calc| F[Charts Data]
+    D -->|API| G[Frontend Dashboard]
+    F -->|API| G
 ```
 
-***
+**Data Flow:**
+1. **Extract:** Google Sheets → Raw data
+2. **Transform:** Cleaning, normalization, fuzzy matching
+3. **Load:** Supabase (companies, contacts, responses)
+4. **Analytics:** Pre-calculate chart data
+5. **Serve:** REST API → Frontend dashboard
 
-## Getting Started (Local Development)
+---
 
-Instructions to get the project running locally using Docker.
+## 🚀 Tech Stack
 
-### Prerequisites
+![Python](https://img.shields.io/badge/-Python-black?style=flat&logo=python) ![Flask](https://img.shields.io/badge/-Flask-black?style=flat&logo=flask) ![Pandas](https://img.shields.io/badge/-Pandas-black?style=flat&logo=pandas) ![Supabase](https://img.shields.io/badge/-Supabase-black?style=flat&logo=supabase) ![Docker](https://img.shields.io/badge/-Docker-black?style=flat&logo=docker) ![Google Cloud](https://img.shields.io/badge/-Google_Cloud-black?style=flat&logo=googlecloud)
 
-* [Git](https://git-scm.com/downloads)
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-* **Supabase Project:** A running Supabase project with the required schema.
-* **Google Credentials:** A `credentials.json` file for a Google Service Account (with Google Sheets API enabled).
+**Core Technologies:**
+* **Python 3.11** - Backend language
+* **Flask** - Web framework with Blueprint architecture
+* **Pandas** - Data transformation and analysis
+* **Supabase** - PostgreSQL database with real-time capabilities
+* **RapidFuzz** - Intelligent fuzzy string matching
+* **Docker + Gunicorn** - Containerization and production server
+* **Google Cloud Run** - Serverless hosting platform
 
-***
+---
 
-### 1. Clone the Repository
+## 📚 Technical Documentation
 
+### Project Structure
+
+```
+app/
+├── api/                    # API endpoints (Blueprints)
+│   ├── routes.py          # All API routes
+│   └── auth_decorator.py  # Token authentication
+├── core/
+│   └── connections/       # External service connections
+│       ├── supabase_service.py
+│       └── google_sheets_service.py
+├── pipelines/
+│   ├── etl/               # ETL pipeline modules
+│   │   ├── run.py        # Main orchestrator
+│   │   ├── cleaning.py   # Data cleaning functions
+│   │   ├── processing.py # Entity separation
+│   │   └── certifications.py
+│   └── analytics/        # Analytics pipeline
+│       ├── run.py
+│       ├── analysis_functions.py
+│       └── update_chart_visibility.py
+└── services/
+    └── dashboard_service.py
+```
+
+### API Endpoints
+
+#### Public Endpoints
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/health` | Health check (used by keep-alive) |
+
+#### Protected Endpoints (Require `Authorization: Bearer <token>`)
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/dashboards` | List of all dashboards |
+| `GET` | `/api/dashboards/<slug>` | Complete dashboard with charts |
+| `GET` | `/api/dashboards/meta` | Dashboard metadata |
+| `GET` | `/api/data/companies-view` | Formatted companies data |
+| `GET` | `/api/data/contacts-view` | Formatted contacts data |
+| `GET` | `/api/data/responses-view` | Formatted responses (history) |
+| `GET` | `/api/companies/search?q=<query>` | Search company by name |
+| `GET` | `/api/table/<table_name>` | Raw table data (admin) |
+
+### ETL Pipeline Features
+
+**Data Cleaning:**
+* ✅ RFC validation (Mexican format + foreign tax IDs)
+* ✅ Phone normalization (E.164 format)
+* ✅ Email cleaning and validation
+* ✅ Address standardization
+* ✅ Fuzzy matching for municipalities and industrial parks
+* ✅ Certification processing (checkbox + free-text)
+* ✅ Unicode normalization and text cleaning
+
+**Data Processing:**
+* ✅ Entity separation (companies, contacts, responses)
+* ✅ Foreign key relationship management
+* ✅ Historical data tracking vs. latest snapshot
+* ✅ Catalog matching with keyword support
+
+### Analytics Pipeline
+
+The analytics pipeline pre-calculates chart data using configurable analysis functions:
+* `analyze_categorical` - Count aggregations
+* `analyze_continuous_binned` - Histogram generation
+* `analyze_top_ranking` - Top N rankings
+* `analyze_array_frequency` - Array element frequency
+* `analyze_array_populated_bool` - Boolean aggregations
+
+Configuration is defined in `config/dashboards_config.py`.
+
+---
+
+## 🚀 Quick Start
+
+For detailed installation instructions, see [INSTALL.md](./INSTALL.md).
+
+**TL;DR:**
 ```bash
+# Clone and setup
 git clone https://github.com/enyeel/sedecyt_analytics_backend.git
 cd sedecyt_analytics_backend
-```
 
-***
+# Configure .env file
+cp .env.example .env  # Edit with your credentials
 
-### 2. Configure Environment
-
-This project uses environment variables. Create a `.env` file in the root directory. **This file is git-ignored and should never be committed.**
-
-```.env
-# Supabase Credentials
-SUPABASE_URL="https://your-project.supabase.co"
-SUPABASE_SERVICE_KEY="your-supabase-service-role-key"
-
-# Google Credentials Path (as it will be inside the container)
-GOOGLE_CREDENTIALS_PATH="/app/credentials.json"
-
-# Frontend URL for CORS (optional, for local development)
-FRONTEND_URL="http://localhost:3000"
-```
-
-***
-
-### 3. Place Your Google Credentials
-
-Place your downloaded `credentials.json` file in the root of the project. (It will be added to the Docker container by the `docker run` command).
-
-### 4. Build and Run the Docker Container
-
-This command builds the image and runs a container, securely mounting your local credentials file into the container where the app expects it.
-
-```bash
-# 1. Build the image
+# Run with Docker
 docker build -t sedecyt-backend .
-
-# 2. Run the container
-docker run -p 8080:8080 \
-  -v ./credentials.json:/app/credentials.json \
-  -v .:/app \
-  --env-file .env \
-  --name sedecyt-api \
-  sedecyt-backend
+docker run -p 8080:8080 --env-file .env sedecyt-backend
 ```
 
-The API will now be running and accessible at http://localhost:8080.
+---
 
-***
+## 🔗 Frontend Integration
 
-## API Endpoints
+This backend is designed to work seamlessly with the [SEDECyT Analytics Frontend](https://github.com/enyeel/sedecyt_analytics_frontend):
 
-All endpoints are protected with Supabase Auth token validation (except `/api/health`).
+* **Authentication:** Both use Supabase Auth for unified user sessions
+* **API Contract:** Frontend consumes all endpoints with `Authorization: Bearer <token>`
+* **Data Flow:** ETL → Supabase → Analytics → API → Frontend Charts
+* **CORS:** Configured to allow frontend domain requests
 
-### Public Endpoints
+**Environment Variables Connection:**
+- Frontend uses `NEXT_PUBLIC_API_URL` pointing to this backend
+- Backend uses `FRONTEND_URL` for CORS configuration
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/health` | Health check endpoint (used by keep-alive workflow) |
-
-### Protected Endpoints (Require `Authorization: Bearer <token>`)
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/dashboards` | Gets a lightweight list of all available dashboards |
-| `GET` | `/api/dashboards/<slug>` | Gets a complete dashboard with all chart data |
-| `GET` | `/api/dashboards/meta` | Gets dashboard metadata (count, source) |
-| `GET` | `/api/data/companies-view` | Gets formatted companies data for table view |
-| `GET` | `/api/data/contacts-view` | Gets formatted contacts data for table view |
-| `GET` | `/api/data/responses-view` | Gets formatted responses data (full history) for table view |
-| `GET` | `/api/companies/search?q=<query>` | Searches for a company by trade name |
-| `GET` | `/api/table/<table_name>` | Gets raw data from any table (admin use) |
-
-***
-
-## ETL Pipeline
-
-The ETL pipeline is fully modularized and can be run independently:
-
-### Running the ETL Pipeline
-
-```bash
-# Inside the Docker container or local environment
-python -m app.pipelines.etl.run
-```
-
-**What it does:**
-1. **Extracts** data from Google Sheets ("Formulario Desarrollo Industria")
-2. **Cleans** all columns (RFCs, emails, phones, addresses, etc.)
-3. **Matches** municipalities and industrial parks using fuzzy matching
-4. **Processes** certifications (both checkbox selections and free-text)
-5. **Separates** data into three entities: companies, contacts, responses
-6. **Uploads** to Supabase with proper foreign key relationships
-7. **Maintains** both latest snapshot (companies table) and full history (responses table)
-
-### Running the Analytics Pipeline
-
-```bash
-# Inside the Docker container or local environment
-python -m app.pipelines.analytics.run
-```
-
-**What it does:**
-1. **Fetches** all required data from Supabase
-2. **Enriches** data with catalog information (municipality names, park names)
-3. **Calculates** chart data using configurable analysis functions
-4. **Formats** data into Chart.js-compatible JSON
-5. **Stores** pre-calculated charts in Supabase for instant dashboard loading
-
-The analytics pipeline reads from `config/dashboards_config.py` to determine which charts to generate.
-
-***
-
-## Data Cleaning Features
-
-The cleaning pipeline includes sophisticated data normalization:
-
-* **RFC Validation:** Validates Mexican RFC format (12-13 characters) and handles foreign tax IDs
-* **Phone Normalization:** Converts all phone numbers to E.164 format (+52 for Mexico)
-* **Email Cleaning:** Normalizes emails to lowercase, removes spaces
-* **Address Standardization:** Cleans and normalizes address fields
-* **Fuzzy Matching:** Uses RapidFuzz for intelligent catalog matching:
-  * Municipalities (with keyword support)
-  * Industrial parks
-  * Certifications (ISO standards)
-* **Text Normalization:** Unicode normalization, accent removal, case standardization
-* **Historical Tracking:** Maintains full response history while keeping latest company snapshot
-
-***
+---
 
 ## 👥 Collaborators
 
@@ -265,12 +315,22 @@ The cleaning pipeline includes sophisticated data normalization:
 
 ---
 
-## 🔮 Future Improvements & Planned Features
+## 🤝 Contact
 
-* Add scheduled ETL runs via Cloud Scheduler or GitHub Actions
-* Implement data validation webhooks for real-time updates
-* Add export functionality (CSV/Excel) for dashboard data
-* Enhance fuzzy matching with machine learning models
-* Add API rate limiting and caching layers
-* Implement comprehensive logging and monitoring
-* Add unit and integration tests for ETL pipelines
+Interested in implementing a similar solution for your organization?
+
+* 📧 **Email:** [anjel.hdz22@gmail.com](mailto:anjel.hdz22@gmail.com)
+* 💼 **LinkedIn:** [Your LinkedIn Profile]
+* 🌐 **Portfolio:** [Your Portfolio Website]
+
+---
+
+## 🔮 Roadmap
+
+* ⏳ Scheduled ETL runs via Cloud Scheduler
+* ⏳ Real-time data validation webhooks
+* ⏳ Enhanced export functionality (CSV/Excel)
+* ⏳ Machine learning models for fuzzy matching
+* ⏳ API rate limiting and caching layers
+* ⏳ Comprehensive logging and monitoring
+* ⏳ Unit and integration test coverage
